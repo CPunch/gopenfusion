@@ -23,8 +23,12 @@ type Packet struct {
 const PACK_ALIGN = 4
 
 func NewPacket(sz int) *Packet {
-	newBuf := make([]byte, sz)
-	return &Packet{ByteOrder: binary.LittleEndian, Buf: newBuf}
+	pkt := &Packet{
+		ByteOrder: binary.LittleEndian,
+		Buf:       make([]byte, sz),
+		cursor:    0,
+	}
+	return pkt
 }
 
 func (pkt *Packet) ResetCursor() {
@@ -44,6 +48,10 @@ func (pkt *Packet) writeRaw(data []byte) {
 
 func (pkt *Packet) Write(data []byte) {
 	pkt.writeRaw(data)
+
+	if len(pkt.Buf) > CN_PACKET_BUFFER_SIZE {
+		panic(fmt.Errorf("Failed to write to packet, invalid size!"))
+	}
 }
 
 func (pkt *Packet) writeByte(data byte) {
@@ -59,7 +67,7 @@ func (pkt *Packet) readRaw(sz int) []byte {
 
 func (pkt *Packet) Read(sz int) []byte {
 	if sz > len(pkt.Buf) {
-		panic("Failed to read from packet, invalid size!")
+		panic(fmt.Errorf("Failed to read from packet, invalid size!"))
 	}
 
 	return pkt.readRaw(sz)
@@ -70,6 +78,8 @@ func (pkt *Packet) readByte() byte {
 }
 
 func (pkt *Packet) encodeStructField(field reflect.StructField, value reflect.Value) {
+	log.Printf("Encoding '%s', current cursor: %d", field.Name, len(pkt.Buf))
+
 	switch field.Type.Kind() {
 	case reflect.String: // all strings in fusionfall packets are encoded as utf16, we'll need to encode it
 		sz, err := strconv.Atoi(field.Tag.Get("size"))
@@ -77,23 +87,33 @@ func (pkt *Packet) encodeStructField(field reflect.StructField, value reflect.Va
 			panic(fmt.Errorf("Failed to grab string 'size' tag!!"))
 		}
 
+		sz *= 2
 		buf16 := utf16.Encode([]rune(value.String()))
+		buf := *(*[]byte)(unsafe.Pointer(&buf16))
 
-		// len(buf16) needs to be the same size as sz
-		if len(buf16) > sz {
+		// len(buf) needs to be the same size as sz
+		if len(buf) > sz {
 			// truncate
-			buf16 = buf16[:sz]
+			buf = buf[:sz]
 		} else {
 			// grow
-			for len(buf16) < sz {
-				buf16 = append(buf16, 0)
+			for len(buf) < sz {
+				buf = append(buf, 0)
 			}
 		}
 
-		buf := *(*[]byte)(unsafe.Pointer(&buf16))
+		log.Printf("sending %d", len(buf))
 		pkt.Write(buf)
 	default:
 		pkt.Encode(value.Addr().Interface())
+	}
+
+	// write padding bytes
+	pad, err := strconv.Atoi(field.Tag.Get("pad"))
+	if err == nil {
+		for i := 0; i < pad; i++ {
+			pkt.writeByte(0)
+		}
 	}
 }
 
@@ -150,14 +170,6 @@ func (pkt *Packet) Encode(data interface{}) {
 func (pkt *Packet) decodeStructField(field reflect.StructField, value reflect.Value) {
 	log.Printf("Decoding '%s', current cursor: %d", field.Name, pkt.cursor)
 
-	// read padding bytes
-	offset, err := strconv.Atoi(field.Tag.Get("offset"))
-	if err == nil {
-		for pkt.cursor < offset {
-			pkt.readByte()
-		}
-	}
-
 	switch field.Type.Kind() {
 	case reflect.String: // all strings in fusionfall packets are encoded as utf16, we'll need to decode it
 		sz, err := strconv.Atoi(field.Tag.Get("size"))
@@ -185,6 +197,14 @@ func (pkt *Packet) decodeStructField(field reflect.StructField, value reflect.Va
 		value.SetString(str)
 	default:
 		pkt.Decode(value.Addr().Interface())
+	}
+
+	// read padding bytes
+	pad, err := strconv.Atoi(field.Tag.Get("pad"))
+	if err == nil {
+		for i := 0; i < pad; i++ {
+			pkt.readByte()
+		}
 	}
 }
 

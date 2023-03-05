@@ -10,3 +10,8 @@ type SP_CL2LS_REQ_LOGIN struct {
 	Cookie_TEGid  [64]uint8
 	Cookie_authid [255]uint8
 }
+
+type SP_LS2CL_REP_LOGIN_FAIL struct {
+	ErrorCode int32
+	ID        string `size:"33" pad:"2"`
+}
