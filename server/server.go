@@ -6,7 +6,7 @@ import (
 	"log"
 	"net"
 
-	"github.com/CPunch/GoFusion/api/protocol"
+	"github.com/CPunch/GoFusion/protocol"
 )
 
 const (
