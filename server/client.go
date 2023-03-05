@@ -53,6 +53,9 @@ func (client *Client) Send(data interface{}, typeID uint32) {
 
 func (client *Client) ClientHandler() {
 	defer func() {
+		if err := recover(); err != nil {
+			log.Printf("Client %p panic'd! %v", client, err)
+		}
 		client.conn.Close()
 		client.server.unregister <- client
 	}()
