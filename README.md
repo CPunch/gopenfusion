@@ -1,6 +1,6 @@
 # gopenfusion
 
-A toy fusionfall packet protocol implementation written in Go.
+A toy implementation of the Fusionfall Packet Protocol written in Go.
 
 ## Generating structures
 

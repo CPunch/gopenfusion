@@ -1,4 +1,4 @@
-package main
+package server
 
 import (
 	"encoding/binary"
@@ -16,14 +16,14 @@ const (
 )
 
 type Client struct {
-	server   *Server
+	server   Server
 	conn     net.Conn
 	e_key    []byte
 	fe_key   []byte
 	whichKey int
 }
 
-func newClient(server *Server, conn net.Conn) *Client {
+func newClient(server Server, conn net.Conn) *Client {
 	return &Client{
 		server:   server,
 		conn:     conn,
@@ -97,7 +97,7 @@ func (client *Client) ClientHandler() {
 			log.Printf("Client %p panic'd! %v", client, err)
 		}
 		client.conn.Close()
-		client.server.unregister <- client
+		client.server.Disconnect(client)
 	}()
 
 	tmp := make([]byte, 4, protocol.CN_PACKET_BUFFER_SIZE)
@@ -125,7 +125,7 @@ func (client *Client) ClientHandler() {
 		// dispatch packet
 		log.Printf("Got packet ID: %x, with a sizeof: %d\n", typeID, sz)
 		pkt := protocol.NewPacket(tmp[4:sz])
-		client.server.handlePacket(client, typeID, pkt)
+		client.server.HandlePacket(client, typeID, pkt)
 
 		// reset tmp
 		tmp = tmp[:4]
