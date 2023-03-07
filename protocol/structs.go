@@ -1,3 +1,4 @@
+// generated via genstructs.py - All structure padding and member alignment verified
 package protocol
 
 type SPCStyle struct {

@@ -9,6 +9,8 @@
     (because it already does!)
 
     usage: ./genstructs.py [IN.cs] > structs.go
+
+    It's recommended to run structs.go through `gofmt`.
 '''
 from distutils.ccompiler import new_compiler
 import subprocess
@@ -24,6 +26,8 @@ def sanitizeName(name: str) -> str:
 def writeToFile(source: str, filePath: str) -> None:
     with open(filePath, "w") as out:
         out.write(source)
+
+WARN_INVALID = False
 
 class StructTranspiler:
     class StructField:
@@ -132,7 +136,7 @@ class StructTranspiler:
 
     def getNextLine(self) -> str:
         self.cursor += 1
-        return self.lines[self.cursor]
+        return self.getLine()
 
     def needsPatching(self) -> int:
         for i in range(len(self.fields)):
@@ -206,6 +210,8 @@ class StructTranspiler:
             line = self.getLine()
 
     def toGoStyle(self) -> str:
+        global WARN_INVALID
+
         source = "type " + self.name + " struct {"
         currentSize = 0
         for field in self.fields:
@@ -223,6 +229,7 @@ class StructTranspiler:
 
         if currentSize != self.size:
             source += "\n// WARNING: computed size is %d, needs to be %d!!" % (currentSize, self.size)
+            WARN_INVALID = True
         else:
             source += "\n// SIZE: %d" % self.size
         source += "\n}\n"
@@ -277,8 +284,15 @@ if __name__ == '__main__':
         structs[i].populatePadding(lines[i].split(" "))
 
     # emit structures
+    source = "// generated via genstructs.py"
+    if WARN_INVALID:
+        source += " - WARN!! Not all structures are valid, grep 'WARNING'\n"
+    else:
+        source += " - All structure padding and member alignment verified\n"
+    source += "package protocol\n\n"
     for struct in structs:
-        print(struct.toGoStyle())
+        source += struct.toGoStyle() + "\n"
+    print(source)
 
     os.remove("tmp")
     os.remove("tmp.c")
