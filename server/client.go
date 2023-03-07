@@ -61,19 +61,13 @@ func (client *Client) Send(data interface{}, typeID uint32) {
 	if _, err := client.conn.Write(tmp); err != nil {
 		panic(fmt.Errorf("[FATAL] failed to write packet body! %v", err))
 	}
-	log.Printf("sent!")
 }
 
-func (client *Client) Login(pkt *protocol.Packet) {
-	var loginPkt protocol.SP_CL2LS_REQ_LOGIN
-	pkt.Decode(&loginPkt)
-	log.Printf("Got packet: %#v", loginPkt)
-
-	// !! TODO
+func (client *Client) AcceptLogin(SZID string, IClientVerC int32, ISlotNum int8, data []protocol.SP_LS2CL_REP_CHAR_INFO) {
 	resp := &protocol.SP_LS2CL_REP_LOGIN_SUCC{
-		SZID:          loginPkt.SZID,
-		ICharCount:    0,
-		ISlotNum:      1,
+		SZID:          SZID,
+		ICharCount:    int8(len(data)),
+		ISlotNum:      ISlotNum,
 		IPaymentFlag:  1,
 		IOpenBetaFlag: 0,
 		UISvrTime:     uint64(time.Now().Unix()),
@@ -87,9 +81,14 @@ func (client *Client) Login(pkt *protocol.Packet) {
 	)
 	client.fe_key = protocol.CreateNewKey(
 		binary.LittleEndian.Uint64([]byte(protocol.DEFAULT_KEY)),
-		uint64(loginPkt.IClientVerC),
+		uint64(IClientVerC),
 		1,
 	)
+
+	// send characters (if any)
+	for i := 0; i < len(data); i++ {
+		client.Send(data[i], protocol.P_LS2CL_REP_CHAR_INFO)
+	}
 }
 
 func (client *Client) ClientHandler() {
@@ -121,16 +120,12 @@ func (client *Client) ClientHandler() {
 
 		// decrypt && grab typeID
 		protocol.DecryptData(tmp[:sz], client.e_key)
-		typeID := int(binary.LittleEndian.Uint32(tmp[:4]))
+		typeID := uint32(binary.LittleEndian.Uint32(tmp[:4]))
 
+		// dispatch packet
 		log.Printf("Got packet ID: %x, with a sizeof: %d\n", typeID, sz)
 		pkt := protocol.NewPacket(tmp[4:sz])
-		switch typeID {
-		case protocol.P_CL2LS_REQ_LOGIN:
-			client.Login(pkt)
-		default:
-			log.Printf("[WARN] unsupported packet ID: %x\n", typeID)
-		}
+		client.server.handlePacket(client, typeID, pkt)
 
 		// reset tmp
 		tmp = tmp[:4]

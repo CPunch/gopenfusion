@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"log"
 	"net"
+
+	"github.com/CPunch/GopenFusion/protocol"
 )
 
 type Server struct {
@@ -45,6 +47,38 @@ func (server *Server) Start() {
 			go client.ClientHandler()
 			fmt.Printf("Client %p connected\n", client)
 		}
+	}
+}
+
+func (server *Server) handlePacket(client *Client, typeID uint32, pkt *protocol.Packet) {
+	switch typeID {
+	case protocol.P_CL2LS_REQ_LOGIN:
+		var loginPkt protocol.SP_CL2LS_REQ_LOGIN
+		pkt.Decode(&loginPkt)
+
+		// TODO: for now, we're a dummy server
+		client.AcceptLogin(loginPkt.SZID, loginPkt.IClientVerC, 1, []protocol.SP_LS2CL_REP_CHAR_INFO{})
+	case protocol.P_CL2LS_REQ_CHECK_CHAR_NAME:
+		var charPkt protocol.SP_CL2LS_REQ_CHECK_CHAR_NAME
+		pkt.Decode(&charPkt)
+
+		client.Send(&protocol.SP_LS2CL_REP_CHECK_CHAR_NAME_SUCC{
+			SZFirstName: charPkt.SZFirstName,
+			SZLastName:  charPkt.SZLastName,
+		}, protocol.P_LS2CL_REP_CHECK_CHAR_NAME_SUCC)
+	case protocol.P_CL2LS_REQ_SAVE_CHAR_NAME:
+		var charPkt protocol.SP_CL2LS_REQ_SAVE_CHAR_NAME
+		pkt.Decode(&charPkt)
+
+		client.Send(&protocol.SP_LS2CL_REP_SAVE_CHAR_NAME_SUCC{
+			IPC_UID:     1,
+			ISlotNum:    charPkt.ISlotNum,
+			IGender:     charPkt.IGender,
+			SZFirstName: charPkt.SZFirstName,
+			SZLastName:  charPkt.SZLastName,
+		}, protocol.P_LS2CL_REP_SAVE_CHAR_NAME_SUCC)
+	default:
+		log.Printf("[WARN] unsupported packet ID: %x\n", typeID)
 	}
 }
 

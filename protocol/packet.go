@@ -3,7 +3,6 @@ package protocol
 import (
 	"encoding/binary"
 	"fmt"
-	"log"
 	"reflect"
 	"strconv"
 	"unicode/utf16"
@@ -78,7 +77,7 @@ func (pkt *Packet) readByte() byte {
 }
 
 func (pkt *Packet) encodeStructField(field reflect.StructField, value reflect.Value) {
-	log.Printf("Encoding '%s', current cursor: %d", field.Name, len(pkt.Buf))
+	// log.Printf("Encoding '%s', current cursor: %d", field.Name, len(pkt.Buf))
 
 	switch field.Type.Kind() {
 	case reflect.String: // all strings in fusionfall packets are encoded as utf16, we'll need to encode it
@@ -102,7 +101,6 @@ func (pkt *Packet) encodeStructField(field reflect.StructField, value reflect.Va
 			}
 		}
 
-		log.Printf("sending %d", len(buf))
 		pkt.Write(buf)
 	default:
 		pkt.Encode(value.Addr().Interface())
@@ -168,7 +166,7 @@ func (pkt *Packet) Encode(data interface{}) {
 }
 
 func (pkt *Packet) decodeStructField(field reflect.StructField, value reflect.Value) {
-	log.Printf("Decoding '%s', current cursor: %d", field.Name, pkt.cursor)
+	// log.Printf("Decoding '%s', current cursor: %d", field.Name, pkt.cursor)
 
 	switch field.Type.Kind() {
 	case reflect.String: // all strings in fusionfall packets are encoded as utf16, we'll need to decode it
@@ -193,7 +191,6 @@ func (pkt *Packet) decodeStructField(field reflect.StructField, value reflect.Va
 		}
 
 		str := string(utf16.Decode(buf16[:realSize]))
-		log.Printf(" got: %#.v or '%s'", buf16, str)
 		value.SetString(str)
 	default:
 		pkt.Decode(value.Addr().Interface())
@@ -222,7 +219,6 @@ func (pkt *Packet) Decode(data interface{}) {
 		sz := rv.Len()
 
 		// decode data
-		log.Print("reading array length ", sz, " cursor: ", pkt.cursor)
 		for i := 0; i < sz; i++ {
 			elem := rv.Index(i)
 			pkt.Decode(elem.Addr().Interface())
