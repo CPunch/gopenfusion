@@ -5,7 +5,7 @@ import (
 	"log"
 	"net"
 
-	"github.com/CPunch/GoFusion/protocol"
+	"github.com/CPunch/GopenFusion/protocol"
 )
 
 type Server struct {

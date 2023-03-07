@@ -6,7 +6,7 @@ import (
 	"log"
 	"net"
 
-	"github.com/CPunch/GoFusion/protocol"
+	"github.com/CPunch/GopenFusion/protocol"
 )
 
 type Client struct {
@@ -24,14 +24,13 @@ func newClient(server *Server, conn net.Conn, key []byte) *Client {
 }
 
 func (client *Client) Send(data interface{}, typeID uint32) {
-	tmp := make([]byte, 4)
-
 	// encode
-	pkt := protocol.NewPacket(0)
+	pkt := protocol.NewPacket(make([]byte, 0))
 	pkt.Encode(data)
+	log.Printf("Sending %#v, sizeof: %d", data, len(pkt.Buf))
 
 	// write packet size
-	log.Printf("Sending %#v, sizeof: %d", data, len(pkt.Buf))
+	tmp := make([]byte, 4)
 	binary.LittleEndian.PutUint32(tmp, uint32(len(pkt.Buf)+4))
 	if _, err := client.conn.Write(tmp); err != nil {
 		panic(fmt.Errorf("[FATAL] failed to write packet size! %v", err))
@@ -39,13 +38,13 @@ func (client *Client) Send(data interface{}, typeID uint32) {
 
 	// prepend the typeID to the packet body
 	binary.LittleEndian.PutUint32(tmp, uint32(typeID))
-	pkt.Buf = append(tmp, pkt.Buf...)
+	tmp = append(tmp, pkt.Buf...)
 
-	// encrypt body
-	protocol.EncryptData(pkt.Buf[:], client.key)
+	// encrypt typeID & body
+	protocol.EncryptData(tmp, client.key)
 
 	// write packet body
-	if _, err := client.conn.Write(pkt.Buf); err != nil {
+	if _, err := client.conn.Write(tmp); err != nil {
 		panic(fmt.Errorf("[FATAL] failed to write packet body! %v", err))
 	}
 	log.Printf("sent!")
@@ -60,7 +59,7 @@ func (client *Client) ClientHandler() {
 		client.server.unregister <- client
 	}()
 
-	tmp := make([]byte, 4)
+	tmp := make([]byte, 4, protocol.CN_PACKET_BUFFER_SIZE)
 	for {
 		// read packet size
 		if _, err := client.conn.Read(tmp); err != nil {
@@ -68,27 +67,37 @@ func (client *Client) ClientHandler() {
 		}
 		sz := int(binary.LittleEndian.Uint32(tmp))
 
+		// client should never send a packet size outside of this range
+		if sz > protocol.CN_PACKET_BUFFER_SIZE || sz < 4 {
+			panic(fmt.Errorf("[FATAL] malicious packet size received! %d", sz))
+		}
+
 		// read packet body
-		pkt := protocol.NewPacket(sz)
-		if _, err := client.conn.Read(pkt.Buf); err != nil {
+		if _, err := client.conn.Read(tmp[:sz]); err != nil {
 			panic(fmt.Errorf("[FATAL] failed to read packet body! %v", err))
 		}
 
 		// decrypt && grab typeID
-		protocol.DecryptData(pkt.Buf[:], client.key)
-		typeID := int(binary.LittleEndian.Uint32(pkt.Read(4)))
+		protocol.DecryptData(tmp[:sz], client.key)
+		typeID := int(binary.LittleEndian.Uint32(tmp[:4]))
 
-		log.Printf("Got packet ID: %x, with a sizeof: %d\n", typeID, len(pkt.Buf))
-		pkt.ResetCursor()
+		log.Printf("Got packet ID: %x, with a sizeof: %d\n", typeID, sz)
+		pkt := protocol.NewPacket(tmp[4:sz])
 		switch typeID {
 		case protocol.P_CL2LS_REQ_LOGIN:
 			var loginPkt protocol.SP_CL2LS_REQ_LOGIN
 			pkt.Decode(&loginPkt)
 			log.Printf("Got packet: %#v", loginPkt)
 
-			client.Send(&protocol.SP_LS2CL_REP_LOGIN_FAIL{ErrorCode: protocol.LOGIN_FAIL_VERSION_ERROR, ID: loginPkt.ID}, protocol.P_LS2CL_REP_LOGIN_FAIL)
+			client.Send(&protocol.SP_LS2CL_REP_LOGIN_FAIL{
+				ErrorCode: protocol.LOGIN_FAIL_VERSION_ERROR,
+				ID:        loginPkt.ID,
+			}, protocol.P_LS2CL_REP_LOGIN_FAIL)
 		default:
 			log.Printf("[WARN] unsupported packet ID: %x\n", typeID)
 		}
+
+		// reset tmp
+		tmp = tmp[:4]
 	}
 }

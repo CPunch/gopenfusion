@@ -22,10 +22,10 @@ type Packet struct {
 
 const PACK_ALIGN = 4
 
-func NewPacket(sz int) *Packet {
+func NewPacket(buf []byte) *Packet {
 	pkt := &Packet{
 		ByteOrder: binary.LittleEndian,
-		Buf:       make([]byte, sz),
+		Buf:       buf,
 		cursor:    0,
 	}
 	return pkt
