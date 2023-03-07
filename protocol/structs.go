@@ -3,8 +3,8 @@ package protocol
 type SPCStyle struct {
 	IPC_UID     int64
 	INameCheck  int8   `pad:"1"`
-	SZFirstName string `size:"9"`
-	SZLastName  string `size:"17"`
+	SzFirstName string `size:"9"`
+	SzLastName  string `size:"17"`
 	IGender     int8
 	IFaceStyle  int8
 	IHairStyle  int8
@@ -73,13 +73,13 @@ type SItemTrade struct {
 type SItemVendor struct {
 	IVendorID int32
 	FBuyCost  float32
-	item      SItemBase
+	Item      SItemBase
 	ISortNum  int32
 	// SIZE: 24
 }
 
 type SItemReward struct {
-	sItem    SItemBase
+	SItem    SItemBase
 	EIL      int32
 	ISlotNum int32
 	// SIZE: 20
@@ -104,10 +104,10 @@ type SEmailItemInfoFromCL struct {
 }
 
 type SEPRecord struct {
-	UIScore int16
-	UIRank  int8
-	UIRing  int8
-	UITime  int16
+	UiScore int16
+	UiRank  int8
+	UiRing  int8
+	UiTime  int16
 	// SIZE: 6
 }
 
@@ -117,16 +117,16 @@ type SBuddyBaseInfo struct {
 	BBlocked       int8
 	BFreeChat      int8
 	IPCState       int8   `pad:"1"`
-	SZFirstName    string `size:"9"`
-	SZLastName     string `size:"17"`
+	SzFirstName    string `size:"9"`
+	SzLastName     string `size:"17"`
 	IGender        int8
 	INameCheckFlag int8 `pad:"2"`
 	// SIZE: 72
 }
 
 type SBuddyStyleInfo struct {
-	sBuddyStyle SPCStyle
-	aEquip      [9]SItemBase
+	SBuddyStyle SPCStyle
+	AEquip      [9]SItemBase
 	// SIZE: 184
 }
 
@@ -145,9 +145,9 @@ type SSYSTEMTIME struct {
 type SEmailInfo struct {
 	IEmailIndex    int64
 	IFromPCUID     int64
-	SZFirstName    string `size:"9"`
-	SZLastName     string `size:"17"`
-	SZSubject      string `size:"32"`
+	SzFirstName    string `size:"9"`
+	SzLastName     string `size:"17"`
+	SzSubject      string `size:"32"`
 	IReadFlag      int32
 	SendTime       SSYSTEMTIME
 	DeleteTime     SSYSTEMTIME
@@ -205,10 +205,10 @@ type SPCLoadData2CL struct {
 	IY                  int32
 	IZ                  int32
 	IAngle              int32
-	aEquip              [9]SItemBase
-	aInven              [50]SItemBase
-	aQInven             [50]SItemBase
-	aNanoBank           [37]SNano
+	AEquip              [9]SItemBase
+	AInven              [50]SItemBase
+	AQInven             [50]SItemBase
+	ANanoBank           [37]SNano
 	ANanoSlots          [3]int16
 	IActiveNanoSlotNum  int16 `pad:"2"`
 	IConditionBitFlag   int32
@@ -216,7 +216,7 @@ type SPCLoadData2CL struct {
 	TimeBuff            STimeBuff
 	AQuestFlag          [32]int64
 	ARepeatQuestFlag    [8]int64
-	aRunningQuest       [9]SRunningQuest
+	ARunningQuest       [9]SRunningQuest
 	ICurrentMissionID   int32
 	IWarpLocationFlag   int32
 	AWyvernLocationFlag [2]int64
@@ -226,7 +226,7 @@ type SPCLoadData2CL struct {
 	IFatigueRate        int32
 	IFirstUseFlag1      int64
 	IFirstUseFlag2      int64
-	AIPCSkill           [33]int32
+	AiPCSkill           [33]int32
 	// SIZE: 2688
 }
 
@@ -531,8 +531,8 @@ type SPCGroupMemberInfo struct {
 	IPC_ID        int32
 	IPCUID        uint64
 	INameCheck    int8   `pad:"1"`
-	SZFirstName   string `size:"9"`
-	SZLastName    string `size:"17"`
+	SzFirstName   string `size:"9"`
+	SzLastName    string `size:"17"`
 	ISpecialState int8   `pad:"1"`
 	ILv           int16  `pad:"2"`
 	IHP           int32
@@ -586,7 +586,7 @@ type SQuickSlot struct {
 }
 
 type SP_CL2FE_REQ_PC_ENTER struct {
-	SZID            string `size:"33" pad:"2"`
+	SzID            string `size:"33" pad:"2"`
 	ITempValue      int32
 	IEnterSerialKey int64
 	// SIZE: 80
@@ -639,13 +639,13 @@ type SP_CL2FE_REQ_PC_ATTACK_NPCs struct {
 }
 
 type SP_CL2FE_REQ_SEND_FREECHAT_MESSAGE struct {
-	SZFreeChat string `size:"128"`
+	SzFreeChat string `size:"128"`
 	IEmoteCode int32
 	// SIZE: 260
 }
 
 type SP_CL2FE_REQ_SEND_MENUCHAT_MESSAGE struct {
-	SZFreeChat string `size:"128"`
+	SzFreeChat string `size:"128"`
 	IEmoteCode int32
 	// SIZE: 260
 }
@@ -700,7 +700,7 @@ type SP_CL2FE_REQ_NANO_ACTIVE struct {
 type SP_CL2FE_REQ_NANO_TUNE struct {
 	INanoID           int16
 	ITuneID           int16
-	AINeedItemSlotNum [10]int32
+	AiNeedItemSlotNum [10]int32
 	// SIZE: 44
 }
 
@@ -907,7 +907,7 @@ type SP_CL2FE_REQ_PC_TRADE_EMOTES_CHAT struct {
 	IID_Request  int32
 	IID_From     int32
 	IID_To       int32
-	SZFreeChat   string `size:"128"`
+	SzFreeChat   string `size:"128"`
 	IEmoteCode   int32
 	IFreeChatUse int8 `pad:"3"`
 	// SIZE: 276
@@ -968,7 +968,7 @@ type SP_CL2FE_REQ_ACCEPT_MAKE_BUDDY struct {
 }
 
 type SP_CL2FE_REQ_SEND_BUDDY_FREECHAT_MESSAGE struct {
-	SZFreeChat  string `size:"128"`
+	SzFreeChat  string `size:"128"`
 	IEmoteCode  int32
 	IBuddyPCUID int64
 	IBuddySlot  int8 `pad:"3"`
@@ -976,7 +976,7 @@ type SP_CL2FE_REQ_SEND_BUDDY_FREECHAT_MESSAGE struct {
 }
 
 type SP_CL2FE_REQ_SEND_BUDDY_MENUCHAT_MESSAGE struct {
-	SZFreeChat  string `size:"128"`
+	SzFreeChat  string `size:"128"`
 	IEmoteCode  int32
 	IBuddyPCUID int64
 	IBuddySlot  int8 `pad:"3"`
@@ -1212,8 +1212,8 @@ type SP_CL2FE_REQ_EP_RANK_GET_DETAIL struct {
 
 type SP_CL2FE_REQ_EP_RANK_GET_PC_INFO struct {
 	IEP_ID      int32
-	SZFirstName string `size:"9"`
-	SZLastName  string `size:"17"`
+	SzFirstName string `size:"9"`
+	SzLastName  string `size:"17"`
 	// SIZE: 56
 }
 
@@ -1277,13 +1277,13 @@ type SP_CL2FE_REQ_PC_MOVETRANSPORTATION struct {
 }
 
 type SP_CL2FE_REQ_SEND_ALL_GROUP_FREECHAT_MESSAGE struct {
-	SZFreeChat string `size:"128"`
+	SzFreeChat string `size:"128"`
 	IEmoteCode int32
 	// SIZE: 260
 }
 
 type SP_CL2FE_REQ_SEND_ANY_GROUP_FREECHAT_MESSAGE struct {
-	SZFreeChat  string `size:"128"`
+	SzFreeChat  string `size:"128"`
 	IEmoteCode  int32
 	IGroupPC_ID int32
 	// SIZE: 264
@@ -1296,13 +1296,13 @@ type SP_CL2FE_REQ_BARKER struct {
 }
 
 type SP_CL2FE_REQ_SEND_ALL_GROUP_MENUCHAT_MESSAGE struct {
-	SZFreeChat string `size:"128"`
+	SzFreeChat string `size:"128"`
 	IEmoteCode int32
 	// SIZE: 260
 }
 
 type SP_CL2FE_REQ_SEND_ANY_GROUP_MENUCHAT_MESSAGE struct {
-	SZFreeChat  string `size:"128"`
+	SzFreeChat  string `size:"128"`
 	IEmoteCode  int32
 	IGroupPC_ID int32
 	// SIZE: 264
@@ -1340,8 +1340,8 @@ type SP_CL2FE_GM_REQ_KICK_PLAYER struct {
 	IPC_ID               int32
 	ETargetSearchBy      int32
 	ITargetPC_ID         int32
-	SZTargetPC_FirstName string `size:"10"`
-	SZTargetPC_LastName  string `size:"18"`
+	SzTargetPC_FirstName string `size:"10"`
+	SzTargetPC_LastName  string `size:"18"`
 	ITargetPC_UID        int64
 	// SIZE: 76
 }
@@ -1350,8 +1350,8 @@ type SP_CL2FE_GM_REQ_TARGET_PC_TELEPORT struct {
 	IPC_ID               int32
 	ETargetPCSearchBy    int32
 	ITargetPC_ID         int32
-	SZTargetPC_FirstName string `size:"10"`
-	SZTargetPC_LastName  string `size:"18"`
+	SzTargetPC_FirstName string `size:"10"`
+	SzTargetPC_LastName  string `size:"18"`
 	ITargetPC_UID        int64
 	ETeleportType        int32
 	IToMapType           int32
@@ -1361,8 +1361,8 @@ type SP_CL2FE_GM_REQ_TARGET_PC_TELEPORT struct {
 	IToZ                 int32
 	EGoalPCSearchBy      int32
 	IGoalPC_ID           int32
-	SZGoalPC_FirstName   string `size:"10"`
-	SZGoalPC_LastName    string `size:"18"`
+	SzGoalPC_FirstName   string `size:"10"`
+	SzGoalPC_LastName    string `size:"18"`
 	IGoalPC_UID          int64
 	// SIZE: 172
 }
@@ -1370,8 +1370,8 @@ type SP_CL2FE_GM_REQ_TARGET_PC_TELEPORT struct {
 type SP_CL2FE_GM_REQ_PC_LOCATION struct {
 	ETargetSearchBy      int32
 	ITargetPC_ID         int32
-	SZTargetPC_FirstName string `size:"10"`
-	SZTargetPC_LastName  string `size:"18"`
+	SzTargetPC_FirstName string `size:"10"`
+	SzTargetPC_LastName  string `size:"18"`
 	ITargetPC_UID        int64
 	// SIZE: 72
 }
@@ -1380,7 +1380,7 @@ type SP_CL2FE_GM_REQ_PC_ANNOUNCE struct {
 	IAreaType     int8
 	IAnnounceType int8 `pad:"2"`
 	IDuringTime   int32
-	SZAnnounceMsg string `size:"512"`
+	SzAnnounceMsg string `size:"512"`
 	// SIZE: 1032
 }
 
@@ -1397,7 +1397,7 @@ type SP_CL2FE_REQ_REGIST_RXCOM struct {
 
 type SP_CL2FE_GM_REQ_PC_MOTD_REGISTER struct {
 	IType       int8   `pad:"1"`
-	SZSystemMsg string `size:"512"`
+	SzSystemMsg string `size:"512"`
 	// SIZE: 1026
 }
 
@@ -1462,9 +1462,9 @@ type SP_CL2FE_REQ_PC_DELETE_EMAIL struct {
 
 type SP_CL2FE_REQ_PC_SEND_EMAIL struct {
 	ITo_PCUID int64
-	SZSubject string `size:"32"`
-	SZContent string `size:"512"`
-	aItem     [4]SEmailItemInfoFromCL
+	SzSubject string `size:"32"`
+	SzContent string `size:"512"`
+	AItem     [4]SEmailItemInfoFromCL
 	ICash     int32
 	// SIZE: 1164
 }
@@ -1484,8 +1484,8 @@ type SP_CL2FE_REQ_PC_RECV_EMAIL_CANDY struct {
 type SP_CL2FE_GM_REQ_TARGET_PC_SPECIAL_STATE_ONOFF struct {
 	ETargetSearchBy      int32
 	ITargetPC_ID         int32
-	SZTargetPC_FirstName string `size:"10"`
-	SZTargetPC_LastName  string `size:"18"`
+	SzTargetPC_FirstName string `size:"10"`
+	SzTargetPC_LastName  string `size:"18"`
 	ITargetPC_UID        int64
 	IONOFF               int32
 	ISpecialStateFlag    int8 `pad:"3"`
@@ -1549,16 +1549,16 @@ type SP_CL2FE_REQ_PC_LOADING_COMPLETE struct {
 }
 
 type SP_CL2FE_REQ_PC_FIND_NAME_MAKE_BUDDY struct {
-	SZFirstName string `size:"9"`
-	SZLastName  string `size:"17"`
+	SzFirstName string `size:"9"`
+	SzLastName  string `size:"17"`
 	// SIZE: 52
 }
 
 type SP_CL2FE_REQ_PC_FIND_NAME_ACCEPT_BUDDY struct {
 	IAcceptFlag int32
 	IBuddyPCUID int64
-	SZFirstName string `size:"9"`
-	SZLastName  string `size:"17"`
+	SzFirstName string `size:"9"`
+	SzLastName  string `size:"17"`
 	// SIZE: 64
 }
 
@@ -1719,14 +1719,14 @@ type SP_CL2FE_REQ_PC_ITEM_ENCHANT struct {
 }
 
 type SP_CL2LS_REQ_LOGIN struct {
-	SZID            string `size:"33"`
-	SZPassword      string `size:"33"`
+	SzID            string `size:"33"`
+	SzPassword      string `size:"33"`
 	IClientVerA     int32
 	IClientVerB     int32
 	IClientVerC     int32
 	ILoginType      int32
-	SZCookie_TEGid  [64]byte
-	SZCookie_authid [255]byte `pad:"1"`
+	SzCookie_TEGid  [64]byte
+	SzCookie_authid [255]byte `pad:"1"`
 	// SIZE: 468
 }
 
@@ -1734,8 +1734,8 @@ type SP_CL2LS_REQ_CHECK_CHAR_NAME struct {
 	IFNCode     int32
 	ILNCode     int32
 	IMNCode     int32
-	SZFirstName string `size:"9"`
-	SZLastName  string `size:"17"`
+	SzFirstName string `size:"9"`
+	SzLastName  string `size:"17"`
 	// SIZE: 64
 }
 
@@ -1745,15 +1745,15 @@ type SP_CL2LS_REQ_SAVE_CHAR_NAME struct {
 	IFNCode     int32
 	ILNCode     int32
 	IMNCode     int32
-	SZFirstName string `size:"9"`
-	SZLastName  string `size:"17"`
+	SzFirstName string `size:"9"`
+	SzLastName  string `size:"17"`
 	// SIZE: 68
 }
 
 type SP_CL2LS_REQ_CHAR_CREATE struct {
 	PCStyle        SPCStyle
-	sOn_Item       SOnItem
-	sOn_Item_Index SOnItem_Index
+	SOn_Item       SOnItem
+	SOn_Item_Index SOnItem_Index
 	// SIZE: 100
 }
 
@@ -1768,7 +1768,7 @@ type SP_CL2LS_REQ_CHAR_DELETE struct {
 }
 
 type SP_CL2LS_REQ_SHARD_SELECT struct {
-	SHardNum int8
+	ShardNum int8
 	// SIZE: 1
 }
 
@@ -1786,8 +1786,8 @@ type SP_CL2LS_REQ_SAVE_CHAR_TUTOR struct {
 }
 
 type SP_CL2LS_REQ_PC_EXIT_DUPLICATE struct {
-	SZID       string `size:"33"`
-	SZPassword string `size:"33"`
+	SzID       string `size:"33"`
+	SzPassword string `size:"33"`
 	// SIZE: 132
 }
 
@@ -1803,39 +1803,39 @@ type SP_CL2LS_REQ_CHANGE_CHAR_NAME struct {
 	IFNCode     int32
 	ILNCode     int32
 	IMNCode     int32
-	SZFirstName string `size:"9"`
-	SZLastName  string `size:"17"`
+	SzFirstName string `size:"9"`
+	SzLastName  string `size:"17"`
 	// SIZE: 76
 }
 
 type SP_CL2LS_REQ_SERVER_SELECT struct {
-	SErverNum int8
+	ServerNum int8
 	// SIZE: 1
 }
 
 type SPacket struct {
-	DWType uint32
-	SZData [4096]byte
+	DwType uint32
+	SzData [4096]byte
 	// SIZE: 4100
 }
 
 type SPacket_Full struct {
-	DWSize uint32
-	DWType uint32
-	SZData [4096]byte
+	DwSize uint32
+	DwType uint32
+	SzData [4096]byte
 	// SIZE: 4104
 }
 
 type SPacket2x struct {
-	DWType uint32
-	SZData [8192]byte
+	DwType uint32
+	SzData [8192]byte
 	// SIZE: 8196
 }
 
 type SPacket2x_Full struct {
-	DWSize uint32
-	DWType uint32
-	SZData [8192]byte
+	DwSize uint32
+	DwType uint32
+	SzData [8192]byte
 	// SIZE: 8200
 }
 
@@ -1852,7 +1852,7 @@ type SP_FE2CL_REP_PC_ENTER_FAIL struct {
 type SP_FE2CL_REP_PC_ENTER_SUCC struct {
 	IID           int32
 	PCLoadData2CL SPCLoadData2CL
-	UISvrTime     uint64
+	UiSvrTime     uint64
 	// SIZE: 2700
 }
 
@@ -1968,14 +1968,14 @@ type SP_FE2CL_AROUND_DEL_NPC struct {
 
 type SP_FE2CL_REP_SEND_FREECHAT_MESSAGE_SUCC struct {
 	IPC_ID     int32
-	SZFreeChat string `size:"128"`
+	SzFreeChat string `size:"128"`
 	IEmoteCode int32
 	// SIZE: 264
 }
 
 type SP_FE2CL_REP_SEND_FREECHAT_MESSAGE_FAIL struct {
 	IErrorCode int32
-	SZFreeChat string `size:"128"`
+	SzFreeChat string `size:"128"`
 	IEmoteCode int32
 	// SIZE: 264
 }
@@ -2007,14 +2007,14 @@ type SP_FE2CL_REP_PC_REGEN_SUCC struct {
 
 type SP_FE2CL_REP_SEND_MENUCHAT_MESSAGE_SUCC struct {
 	IPC_ID     int32
-	SZFreeChat string `size:"128"`
+	SzFreeChat string `size:"128"`
 	IEmoteCode int32
 	// SIZE: 264
 }
 
 type SP_FE2CL_REP_SEND_MENUCHAT_MESSAGE_FAIL struct {
 	IErrorCode int32
-	SZFreeChat string `size:"128"`
+	SzFreeChat string `size:"128"`
 	IEmoteCode int32
 	// SIZE: 264
 }
@@ -2137,8 +2137,8 @@ type SP_FE2CL_REP_NANO_TUNE_SUCC struct {
 	INanoID          int16
 	ISkillID         int16
 	IPC_FusionMatter int32
-	AIItemSlotNum    [10]int32
-	aItem            [10]SItemBase
+	AiItemSlotNum    [10]int32
+	AItem            [10]SItemBase
 	// SIZE: 168
 }
 
@@ -2216,7 +2216,7 @@ type SP_FE2CL_REP_CHARGE_NANO_STAMINA struct {
 
 type SP_FE2CL_REP_PC_TICK struct {
 	IHP               int32
-	aNano             [3]SNano `pad:"2"`
+	ANano             [3]SNano `pad:"2"`
 	IBatteryN         int32
 	BResetMissionFlag int32
 	// SIZE: 32
@@ -2471,7 +2471,7 @@ type SP_FE2CL_REP_PC_TRADE_EMOTES_CHAT struct {
 	IID_Request int32
 	IID_From    int32
 	IID_To      int32
-	SZFreeChat  string `size:"128"`
+	SzFreeChat  string `size:"128"`
 	IEmoteCode  int32
 	// SIZE: 272
 }
@@ -2498,7 +2498,7 @@ type SP_FE2CL_REP_NANO_TUNE_FAIL struct {
 }
 
 type SP_FE2CL_REP_PC_BANK_OPEN_SUCC struct {
-	aBank      [119]SItemBase
+	ABank      [119]SItemBase
 	IExtraBank int32
 	// SIZE: 1432
 }
@@ -2530,7 +2530,7 @@ type SP_FE2CL_REP_PC_VENDOR_START_FAIL struct {
 }
 
 type SP_FE2CL_REP_PC_VENDOR_TABLE_UPDATE_SUCC struct {
-	item [20]SItemVendor
+	Item [20]SItemVendor
 	// SIZE: 480
 }
 
@@ -2613,7 +2613,7 @@ type SP_FE2CL_REP_ACCEPT_MAKE_BUDDY_FAIL struct {
 type SP_FE2CL_REP_SEND_BUDDY_FREECHAT_MESSAGE_SUCC struct {
 	IFromPCUID int64
 	IToPCUID   int64
-	SZFreeChat string `size:"128"`
+	SzFreeChat string `size:"128"`
 	IEmoteCode int32
 	// SIZE: 276
 }
@@ -2621,7 +2621,7 @@ type SP_FE2CL_REP_SEND_BUDDY_FREECHAT_MESSAGE_SUCC struct {
 type SP_FE2CL_REP_SEND_BUDDY_FREECHAT_MESSAGE_FAIL struct {
 	IErrorCode int32
 	IToPCUID   int64
-	SZFreeChat string `size:"128"`
+	SzFreeChat string `size:"128"`
 	IEmoteCode int32
 	// SIZE: 272
 }
@@ -2629,7 +2629,7 @@ type SP_FE2CL_REP_SEND_BUDDY_FREECHAT_MESSAGE_FAIL struct {
 type SP_FE2CL_REP_SEND_BUDDY_MENUCHAT_MESSAGE_SUCC struct {
 	IFromPCUID int64
 	IToPCUID   int64
-	SZFreeChat string `size:"128"`
+	SzFreeChat string `size:"128"`
 	IEmoteCode int32
 	// SIZE: 276
 }
@@ -2637,7 +2637,7 @@ type SP_FE2CL_REP_SEND_BUDDY_MENUCHAT_MESSAGE_SUCC struct {
 type SP_FE2CL_REP_SEND_BUDDY_MENUCHAT_MESSAGE_FAIL struct {
 	IErrorCode int32
 	IToPCUID   int64
-	SZFreeChat string `size:"128"`
+	SzFreeChat string `size:"128"`
 	IEmoteCode int32
 	// SIZE: 272
 }
@@ -2645,7 +2645,7 @@ type SP_FE2CL_REP_SEND_BUDDY_MENUCHAT_MESSAGE_FAIL struct {
 type SP_FE2CL_REP_GET_BUDDY_STYLE_SUCC struct {
 	IBuddyPCUID int64
 	IBuddySlot  int8 `pad:"3"`
-	sBuddyStyle SBuddyStyleInfo
+	SBuddyStyle SBuddyStyleInfo
 	// SIZE: 196
 }
 
@@ -2791,8 +2791,8 @@ type SP_FE2CL_PC_STATE_CHANGE struct {
 type SP_FE2CL_REP_REQUEST_MAKE_BUDDY_SUCC_TO_ACCEPTER struct {
 	IRequestID  int32
 	IBuddyID    int32
-	SZFirstName string `size:"9"`
-	SZLastName  string `size:"17"`
+	SzFirstName string `size:"9"`
+	SzLastName  string `size:"17"`
 	// SIZE: 60
 }
 
@@ -3166,14 +3166,14 @@ type SP_FE2CL_PC_MOVETRANSPORTATION struct {
 
 type SP_FE2CL_REP_SEND_ALL_GROUP_FREECHAT_MESSAGE_SUCC struct {
 	ISendPCID  int32
-	SZFreeChat string `size:"128"`
+	SzFreeChat string `size:"128"`
 	IEmoteCode int32
 	// SIZE: 264
 }
 
 type SP_FE2CL_REP_SEND_ALL_GROUP_FREECHAT_MESSAGE_FAIL struct {
 	ISendPCID  int32
-	SZFreeChat string `size:"128"`
+	SzFreeChat string `size:"128"`
 	IEmoteCode int32
 	IErrorCode int32
 	// SIZE: 268
@@ -3182,7 +3182,7 @@ type SP_FE2CL_REP_SEND_ALL_GROUP_FREECHAT_MESSAGE_FAIL struct {
 type SP_FE2CL_REP_SEND_ANY_GROUP_FREECHAT_MESSAGE_SUCC struct {
 	ISendPCID   int32
 	IGroupPC_ID int32
-	SZFreeChat  string `size:"128"`
+	SzFreeChat  string `size:"128"`
 	IEmoteCode  int32
 	// SIZE: 268
 }
@@ -3190,7 +3190,7 @@ type SP_FE2CL_REP_SEND_ANY_GROUP_FREECHAT_MESSAGE_SUCC struct {
 type SP_FE2CL_REP_SEND_ANY_GROUP_FREECHAT_MESSAGE_FAIL struct {
 	ISendPCID   int32
 	IGroupPC_ID int32
-	SZFreeChat  string `size:"128"`
+	SzFreeChat  string `size:"128"`
 	IEmoteCode  int32
 	IErrorCode  int32
 	// SIZE: 272
@@ -3204,14 +3204,14 @@ type SP_FE2CL_REP_BARKER struct {
 
 type SP_FE2CL_REP_SEND_ALL_GROUP_MENUCHAT_MESSAGE_SUCC struct {
 	ISendPCID  int32
-	SZFreeChat string `size:"128"`
+	SzFreeChat string `size:"128"`
 	IEmoteCode int32
 	// SIZE: 264
 }
 
 type SP_FE2CL_REP_SEND_ALL_GROUP_MENUCHAT_MESSAGE_FAIL struct {
 	ISendPCID  int32
-	SZFreeChat string `size:"128"`
+	SzFreeChat string `size:"128"`
 	IEmoteCode int32
 	IErrorCode int32
 	// SIZE: 268
@@ -3220,7 +3220,7 @@ type SP_FE2CL_REP_SEND_ALL_GROUP_MENUCHAT_MESSAGE_FAIL struct {
 type SP_FE2CL_REP_SEND_ANY_GROUP_MENUCHAT_MESSAGE_SUCC struct {
 	ISendPCID   int32
 	IGroupPC_ID int32
-	SZFreeChat  string `size:"128"`
+	SzFreeChat  string `size:"128"`
 	IEmoteCode  int32
 	// SIZE: 268
 }
@@ -3228,7 +3228,7 @@ type SP_FE2CL_REP_SEND_ANY_GROUP_MENUCHAT_MESSAGE_SUCC struct {
 type SP_FE2CL_REP_SEND_ANY_GROUP_MENUCHAT_MESSAGE_FAIL struct {
 	ISendPCID   int32
 	IGroupPC_ID int32
-	SZFreeChat  string `size:"128"`
+	SzFreeChat  string `size:"128"`
 	IEmoteCode  int32
 	IErrorCode  int32
 	// SIZE: 272
@@ -3267,7 +3267,7 @@ type SP_FE2CL_REP_PC_WARP_USE_TRANSPORTATION_SUCC struct {
 type SP_FE2CL_ANNOUNCE_MSG struct {
 	IAnnounceType int8 `pad:"3"`
 	IDuringTime   int32
-	SZAnnounceMsg string `size:"512"`
+	SzAnnounceMsg string `size:"512"`
 	// SIZE: 1032
 }
 
@@ -3309,15 +3309,15 @@ type SP_FE2CL_GM_REP_PC_LOCATION struct {
 	IX                   int32
 	IY                   int32
 	IZ                   int32
-	SZTargetPC_FirstName string `size:"10"`
-	SZTargetPC_LastName  string `size:"18"`
+	SzTargetPC_FirstName string `size:"10"`
+	SzTargetPC_LastName  string `size:"18"`
 	// SIZE: 96
 }
 
 type SP_FE2CL_GM_REP_PC_ANNOUNCE struct {
 	IAnnounceType int8 `pad:"3"`
 	IDuringTime   int32
-	SZAnnounceMsg string `size:"512"`
+	SzAnnounceMsg string `size:"512"`
 	// SIZE: 1032
 }
 
@@ -3373,7 +3373,7 @@ type SP_FE2CL_REQ_LIVE_CHECK struct {
 
 type SP_FE2CL_PC_MOTD_LOGIN struct {
 	IType       int8   `pad:"1"`
-	SZSystemMsg string `size:"512"`
+	SzSystemMsg string `size:"512"`
 	// SIZE: 1026
 }
 
@@ -3482,8 +3482,8 @@ type SP_FE2CL_REP_PC_NEW_EMAIL struct {
 
 type SP_FE2CL_REP_PC_READ_EMAIL_SUCC struct {
 	IEmailIndex int64
-	SZContent   string `size:"512"`
-	aItem       [4]SItemBase
+	SzContent   string `size:"512"`
+	AItem       [4]SItemBase
 	ICash       int32
 	// SIZE: 1084
 }
@@ -3496,7 +3496,7 @@ type SP_FE2CL_REP_PC_READ_EMAIL_FAIL struct {
 
 type SP_FE2CL_REP_PC_RECV_EMAIL_PAGE_LIST_SUCC struct {
 	IPageNum   int8 `pad:"3"`
-	aEmailInfo [5]SEmailInfo
+	AEmailInfo [5]SEmailInfo
 	// SIZE: 1024
 }
 
@@ -3520,7 +3520,7 @@ type SP_FE2CL_REP_PC_DELETE_EMAIL_FAIL struct {
 type SP_FE2CL_REP_PC_SEND_EMAIL_SUCC struct {
 	ITo_PCUID int64
 	ICandy    int32
-	aItem     [4]SEmailItemInfoFromCL
+	AItem     [4]SEmailItemInfoFromCL
 	// SIZE: 76
 }
 
@@ -3567,8 +3567,8 @@ type SP_FE2CL_PC_SUDDEN_DEAD struct {
 
 type SP_FE2CL_REP_GM_REQ_TARGET_PC_SPECIAL_STATE_ONOFF_SUCC struct {
 	ITargetPC_ID         int32
-	SZTargetPC_FirstName string `size:"10"`
-	SZTargetPC_LastName  string `size:"18"`
+	SzTargetPC_FirstName string `size:"10"`
+	SzTargetPC_LastName  string `size:"18"`
 	IReqSpecialStateFlag int8
 	ISpecialState        int8 `pad:"2"`
 	// SIZE: 64
@@ -3626,7 +3626,7 @@ type SP_FE2CL_REP_PC_TRADE_EMOTES_CHAT_FAIL struct {
 	IID_Request int32
 	IID_From    int32
 	IID_To      int32
-	SZFreeChat  string `size:"128"`
+	SzFreeChat  string `size:"128"`
 	IEmoteCode  int32
 	IErrorCode  int32
 	// SIZE: 276
@@ -3671,23 +3671,23 @@ type SP_FE2CL_REP_PC_WARP_CHANNEL_FAIL struct {
 }
 
 type SP_FE2CL_REP_PC_FIND_NAME_MAKE_BUDDY_SUCC struct {
-	SZFirstName    string `size:"9"`
-	SZLastName     string `size:"17"`
+	SzFirstName    string `size:"9"`
+	SzLastName     string `size:"17"`
 	IPCUID         int64
 	INameCheckFlag int8 `pad:"3"`
 	// SIZE: 64
 }
 
 type SP_FE2CL_REP_PC_FIND_NAME_MAKE_BUDDY_FAIL struct {
-	SZFirstName string `size:"9"`
-	SZLastName  string `size:"17"`
+	SzFirstName string `size:"9"`
+	SzLastName  string `size:"17"`
 	IErrorCode  int32
 	// SIZE: 56
 }
 
 type SP_FE2CL_REP_PC_FIND_NAME_ACCEPT_BUDDY_FAIL struct {
-	SZFirstName    string `size:"9"`
-	SZLastName     string `size:"17"`
+	SzFirstName    string `size:"9"`
+	SzLastName     string `size:"17"`
 	IPCUID         int64
 	INameCheckFlag int8 `pad:"3"`
 	IErrorCode     int32
@@ -3818,7 +3818,7 @@ type SP_FE2CL_PC_STREETSTALL_REP_ITEM_BUY_FAIL struct {
 
 type SP_FE2CL_REP_PC_ITEM_COMBINATION_SUCC struct {
 	INewItemSlot   int32
-	sNewItem       SItemBase
+	SNewItem       SItemBase
 	IStatItemSlot  int32
 	ICashItemSlot1 int32
 	ICashItemSlot2 int32
@@ -3960,7 +3960,7 @@ type SP_FE2CL_PC_VEHICLE_OFF_FAIL struct {
 }
 
 type SP_FE2CL_PC_QUICK_SLOT_INFO struct {
-	aQuickSlot [8]SQuickSlot
+	AQuickSlot [8]SQuickSlot
 	// SIZE: 32
 }
 
@@ -3983,7 +3983,7 @@ type SP_FE2CL_PC_DELETE_TIME_LIMIT_ITEM struct {
 
 type SP_FE2CL_REP_PC_DISASSEMBLE_ITEM_SUCC struct {
 	INewItemSlot int32
-	sNewItem     SItemBase
+	SNewItem     SItemBase
 	// SIZE: 16
 }
 
@@ -3994,18 +3994,18 @@ type SP_FE2CL_REP_PC_DISASSEMBLE_ITEM_FAIL struct {
 }
 
 type SP_FE2CL_GM_REP_REWARD_RATE_SUCC struct {
-	AFRewardRate_Taros        [5]float32
-	AFRewardRate_FusionMatter [5]float32
+	AfRewardRate_Taros        [5]float32
+	AfRewardRate_FusionMatter [5]float32
 	// SIZE: 40
 }
 
 type SP_FE2CL_REP_PC_ITEM_ENCHANT_SUCC struct {
 	IEnchantItemSlot         int32
-	sEnchantItem             SItemBase
+	SEnchantItem             SItemBase
 	IWeaponMaterialItemSlot  int32
-	sWeaponMaterialItem      SItemBase
+	SWeaponMaterialItem      SItemBase
 	IDefenceMaterialItemSlot int32
-	sDefenceMaterialItem     SItemBase
+	SDefenceMaterialItem     SItemBase
 	ICashItemSlot1           int32
 	ICashItemSlot2           int32
 	ICandy                   int32
@@ -4028,33 +4028,33 @@ type SP_LS2CL_REP_LOGIN_SUCC struct {
 	ISlotNum         int8
 	IPaymentFlag     int8
 	ITempForPacking4 int8
-	UISvrTime        uint64
-	SZID             string `size:"33" pad:"2"`
+	UiSvrTime        uint64
+	SzID             string `size:"33" pad:"2"`
 	IOpenBetaFlag    int32
 	// SIZE: 84
 }
 
 type SP_LS2CL_REP_LOGIN_FAIL struct {
 	IErrorCode int32
-	SZID       string `size:"33" pad:"2"`
+	SzID       string `size:"33" pad:"2"`
 	// SIZE: 72
 }
 
 type SP_LS2CL_REP_CHAR_INFO struct {
 	ISlot      int8 `pad:"1"`
 	ILevel     int16
-	sPC_Style  SPCStyle
-	sPC_Style2 SPCStyle2 `pad:"1"`
+	SPC_Style  SPCStyle
+	SPC_Style2 SPCStyle2 `pad:"1"`
 	IX         int32
 	IY         int32
 	IZ         int32
-	aEquip     [9]SItemBase
+	AEquip     [9]SItemBase
 	// SIZE: 204
 }
 
 type SP_LS2CL_REP_CHECK_CHAR_NAME_SUCC struct {
-	SZFirstName string `size:"9"`
-	SZLastName  string `size:"17"`
+	SzFirstName string `size:"9"`
+	SzLastName  string `size:"17"`
 	// SIZE: 52
 }
 
@@ -4067,8 +4067,8 @@ type SP_LS2CL_REP_SAVE_CHAR_NAME_SUCC struct {
 	IPC_UID     int64
 	ISlotNum    int8
 	IGender     int8
-	SZFirstName string `size:"9"`
-	SZLastName  string `size:"17" pad:"2"`
+	SzFirstName string `size:"9"`
+	SzLastName  string `size:"17" pad:"2"`
 	// SIZE: 64
 }
 
@@ -4079,9 +4079,9 @@ type SP_LS2CL_REP_SAVE_CHAR_NAME_FAIL struct {
 
 type SP_LS2CL_REP_CHAR_CREATE_SUCC struct {
 	ILevel     int16 `pad:"2"`
-	sPC_Style  SPCStyle
-	sPC_Style2 SPCStyle2 `pad:"1"`
-	sOn_Item   SOnItem   `pad:"2"`
+	SPC_Style  SPCStyle
+	SPC_Style2 SPCStyle2 `pad:"1"`
+	SOn_Item   SOnItem   `pad:"2"`
 	// SIZE: 100
 }
 
@@ -4151,8 +4151,8 @@ type SP_LS2CL_REQ_LIVE_CHECK struct {
 type SP_LS2CL_REP_CHANGE_CHAR_NAME_SUCC struct {
 	IPC_UID     int64
 	ISlotNum    int8   `pad:"1"`
-	SZFirstName string `size:"9"`
-	SZLastName  string `size:"17" pad:"2"`
+	SzFirstName string `size:"9"`
+	SzLastName  string `size:"17" pad:"2"`
 	// SIZE: 64
 }
 

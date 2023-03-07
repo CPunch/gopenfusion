@@ -57,14 +57,14 @@ func (server *Server) handlePacket(client *Client, typeID uint32, pkt *protocol.
 		pkt.Decode(&loginPkt)
 
 		// TODO: for now, we're a dummy server
-		client.AcceptLogin(loginPkt.SZID, loginPkt.IClientVerC, 1, []protocol.SP_LS2CL_REP_CHAR_INFO{})
+		client.AcceptLogin(loginPkt.SzID, loginPkt.IClientVerC, 1, []protocol.SP_LS2CL_REP_CHAR_INFO{})
 	case protocol.P_CL2LS_REQ_CHECK_CHAR_NAME:
 		var charPkt protocol.SP_CL2LS_REQ_CHECK_CHAR_NAME
 		pkt.Decode(&charPkt)
 
 		client.Send(&protocol.SP_LS2CL_REP_CHECK_CHAR_NAME_SUCC{
-			SZFirstName: charPkt.SZFirstName,
-			SZLastName:  charPkt.SZLastName,
+			SzFirstName: charPkt.SzFirstName,
+			SzLastName:  charPkt.SzLastName,
 		}, protocol.P_LS2CL_REP_CHECK_CHAR_NAME_SUCC)
 	case protocol.P_CL2LS_REQ_SAVE_CHAR_NAME:
 		var charPkt protocol.SP_CL2LS_REQ_SAVE_CHAR_NAME
@@ -74,8 +74,8 @@ func (server *Server) handlePacket(client *Client, typeID uint32, pkt *protocol.
 			IPC_UID:     1,
 			ISlotNum:    charPkt.ISlotNum,
 			IGender:     charPkt.IGender,
-			SZFirstName: charPkt.SZFirstName,
-			SZLastName:  charPkt.SZLastName,
+			SzFirstName: charPkt.SzFirstName,
+			SzLastName:  charPkt.SzLastName,
 		}, protocol.P_LS2CL_REP_SAVE_CHAR_NAME_SUCC)
 	default:
 		log.Printf("[WARN] unsupported packet ID: %x\n", typeID)

@@ -3,7 +3,7 @@
     genstructs.py - gopenfusion
 
     Takes raw structures from a decompiled 'Assembly - CSharp.dll' from a main.unity3d fusionfall beta client,
-    and transpiles them to gopenfusion's custom packet structure & tags. This requires a compiler installed,
+    and transpiles them to gopenfusion's custom packet structure & tags. This requires a C compiler installed,
     since struct field padding is grabbed via the `offsetof()` C macro. Some manual rearranging of structures
     from the disassembled source might be needed. This script can also be modified to generate c-style structures
     (because it already does!)
@@ -19,7 +19,7 @@ PACK_ALIGN = 4
 
 def sanitizeName(name: str) -> str:
     # all exported fields in go must start capitalized
-    return name[0:2].upper() + name[2:]
+    return name[0:1].upper() + name[1:]
 
 def writeToFile(source: str, filePath: str) -> None:
     with open(filePath, "w") as out:
@@ -112,11 +112,10 @@ class StructTranspiler:
                 if type.find("[]") != -1: # it's an array!
                     type = type.replace("[]", "")
                     self.size = int(marshal[(marshal.find("SizeConst = ") + len("SizeConst = ")):marshal.find(")]")])
-                    self.cname = name + "[%d]" % self.size
+                    self.cname = self.name + "[%d]" % self.size
                 else:
-                    self.cname = name
+                    self.cname = self.name
                     self.size = 1
-                self.name = name
                 self.type = sanitizeName(type)
                 self.ctype = sanitizeName(type)
                 self.needsPatching = True

@@ -65,17 +65,17 @@ func (client *Client) Send(data interface{}, typeID uint32) {
 
 func (client *Client) AcceptLogin(SZID string, IClientVerC int32, ISlotNum int8, data []protocol.SP_LS2CL_REP_CHAR_INFO) {
 	resp := &protocol.SP_LS2CL_REP_LOGIN_SUCC{
-		SZID:          SZID,
+		SzID:          SZID,
 		ICharCount:    int8(len(data)),
 		ISlotNum:      ISlotNum,
 		IPaymentFlag:  1,
 		IOpenBetaFlag: 0,
-		UISvrTime:     uint64(time.Now().Unix()),
+		UiSvrTime:     uint64(time.Now().Unix()),
 	}
 
 	client.Send(resp, protocol.P_LS2CL_REP_LOGIN_SUCC)
 	client.e_key = protocol.CreateNewKey(
-		resp.UISvrTime,
+		resp.UiSvrTime,
 		uint64(resp.ICharCount+1),
 		uint64(resp.ISlotNum+1),
 	)
