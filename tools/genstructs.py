@@ -5,8 +5,8 @@
     Takes raw structures from a decompiled 'Assembly - CSharp.dll' from a main.unity3d fusionfall beta client,
     and transpiles them to gopenfusion's custom packet structure & tags. This requires a C compiler installed,
     since struct field padding is grabbed via the `offsetof()` C macro. Some manual rearranging of structures
-    from the disassembled source might be needed. This script can also be modified to generate c-style structures
-    (because it already does!)
+    from the disassembled source might be needed, however the script should 'just werk' off of ilspycmd output.
+    This script can also be modified to generate c-style structures (because it already does!)
 
     usage: ./genstructs.py [IN.cs] > structs.go
 
@@ -245,29 +245,51 @@ if __name__ == '__main__':
     iFile = open(inFilePath, "r")
     lines = iFile.readlines()
     structs: list[StructTranspiler] = []
+
+    def tryPatching(struct: StructTranspiler) -> StructTranspiler:
+        f = struct.needsPatching()
+        lastf = None
+        while f != -1:
+            # search for existing struct
+            name = struct.fields[f].type
+            for s in structs:
+                if s.name == name:
+                    if struct.fields[f].size > 1: # was it an array?
+                        struct.fields[f].type = ("[%d]" % struct.fields[f].size) + struct.fields[f].type
+                    struct.fields[f].size *= s.size # field's size was set to 1 even if it wasn't an array
+                    struct.fields[f].needsPatching = False # mark done
+                    break
+            lastf = f
+            f = struct.needsPatching()
+            if lastf == f: # we're stuck, we'll try patching later
+                break
+
+        return struct
+
     while True:
         try:
             struct = StructTranspiler(lines)
             struct.parseStructure()
+
+            # try to resolve patches right here
+            struct = tryPatching(struct)
+
             structs.append(struct)
             lines = struct.lines[struct.cursor:]
         except:
             break
 
+    # move all structures that need patching to the end (so hopefully they'll be in the
+    # right order for our C source generation)
+    def sortStruct(s: StructTranspiler):
+        if s.needsPatching() != -1:
+            return 1
+        return 0
+    structs.sort(key=sortStruct)
+
     # check for undefined types in structures and patch the sizes
     for i in range(len(structs)):
-        struct = structs[i]
-        f = struct.needsPatching()
-        while f != -1:
-            name = struct.fields[f].type
-            for s in structs:
-                if s.name == name:
-                    if struct.fields[f].size > 1: # was it an array?
-                        structs[i].fields[f].type = ("[%d]" % struct.fields[f].size) + struct.fields[f].type
-                    structs[i].fields[f].size *= s.size # field's size was set to 1 even if it wasn't an array
-                    structs[i].fields[f].needsPatching = False # mark done
-                    break
-            f = struct.needsPatching()
+        structs[i] = tryPatching(structs[i])
 
     # we compile a small c program to grab the exact offsets and alignments
     source = "#include <stdio.h>\n#include <stddef.h>\n"
