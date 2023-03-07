@@ -75,30 +75,12 @@ class StructTranspiler:
                 self.type = "[%d]byte" % self.size
                 self.ctype = "char"
                 self.cname += "[%d]" % self.size
-            elif type == "int[]":
-                self.size = int(marshal[(marshal.find("SizeConst = ") + len("SizeConst = ")):marshal.find(")]")])
-                self.type = "[%d]int32" % self.size
-                self.ctype = "int"
-                self.cname += "[%d]" % self.size
-                self.size *= 4
             elif type == "short[]":
                 self.size = int(marshal[(marshal.find("SizeConst = ") + len("SizeConst = ")):marshal.find(")]")])
                 self.type = "[%d]int16" % self.size
                 self.ctype = "short"
                 self.cname += "[%d]" % self.size
                 self.size *= 2
-            elif type == "long[]":
-                self.size = int(marshal[(marshal.find("SizeConst = ") + len("SizeConst = ")):marshal.find(")]")])
-                self.type = "[%d]int64" % self.size
-                self.ctype = "long"
-                self.cname += "[%d]" % self.size
-                self.size *= 8
-            elif type == "float[]":
-                self.size = int(marshal[(marshal.find("SizeConst = ") + len("SizeConst = ")):marshal.find(")]")])
-                self.type = "[%d]float32" % self.size
-                self.ctype = "float"
-                self.cname += "[%d]" % self.size
-                self.size *= 4
             elif type == "string":
                 # all strings in fusionfall are utf16, in a uint16 array
                 self.size = int(marshal[(marshal.find("SizeConst = ") + len("SizeConst = ")):marshal.find(")]")])
@@ -107,9 +89,27 @@ class StructTranspiler:
                 self.ctype = "short"
                 self.cname += "[%d]" % self.size
                 self.size *= 2
+            elif type == "int[]":
+                self.size = int(marshal[(marshal.find("SizeConst = ") + len("SizeConst = ")):marshal.find(")]")])
+                self.type = "[%d]int32" % self.size
+                self.ctype = "int"
+                self.cname += "[%d]" % self.size
+                self.size *= 4
+            elif type == "float[]":
+                self.size = int(marshal[(marshal.find("SizeConst = ") + len("SizeConst = ")):marshal.find(")]")])
+                self.type = "[%d]float32" % self.size
+                self.ctype = "float"
+                self.cname += "[%d]" % self.size
+                self.size *= 4
+            elif type == "long[]":
+                self.size = int(marshal[(marshal.find("SizeConst = ") + len("SizeConst = ")):marshal.find(")]")])
+                self.type = "[%d]int64" % self.size
+                self.ctype = "long"
+                self.cname += "[%d]" % self.size
+                self.size *= 8
             else:
                 # assume it's a structure that will be defined later
-                if type.find("[]") != -1:
+                if type.find("[]") != -1: # it's an array!
                     type = type.replace("[]", "")
                     self.size = int(marshal[(marshal.find("SizeConst = ") + len("SizeConst = ")):marshal.find(")]")])
                     self.cname = name + "[%d]" % self.size
@@ -214,7 +214,9 @@ class StructTranspiler:
 
             if field.padding > 0:
                 currentSize += field.padding
-                field.tags += " pad:\"%d\"" % field.padding
+                if len(field.tags) > 0: # if there's already a tag defined, make sure there's a space separating them
+                    field.tags += " "
+                field.tags += "pad:\"%d\"" % field.padding
 
             source += "\n\t" + field.name + " " + field.type
             if len(field.tags) > 0:
@@ -254,7 +256,7 @@ if __name__ == '__main__':
                         structs[i].fields[f].type = ("[%d]" % struct.fields[f].size) + struct.fields[f].type
                     structs[i].fields[f].size *= s.size # field's size was set to 1 even if it wasn't an array
                     structs[i].fields[f].needsPatching = False # mark done
-
+                    break
             f = struct.needsPatching()
 
     # we compile a small c program to grab the exact offsets and alignments
