@@ -4,8 +4,6 @@ import (
 	"fmt"
 	"log"
 	"net"
-
-	"github.com/CPunch/GopenFusion/protocol"
 )
 
 type Server struct {
@@ -42,7 +40,7 @@ func (server *Server) Start() {
 				return
 			}
 
-			client := newClient(server, conn, []byte(protocol.E_KEY))
+			client := newClient(server, conn)
 			server.clients[client] = true
 			go client.ClientHandler()
 			fmt.Printf("Client %p connected\n", client)

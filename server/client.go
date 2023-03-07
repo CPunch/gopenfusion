@@ -5,21 +5,30 @@ import (
 	"fmt"
 	"log"
 	"net"
+	"time"
 
 	"github.com/CPunch/GopenFusion/protocol"
 )
 
+const (
+	USE_E = iota
+	USE_FE
+)
+
 type Client struct {
-	server *Server
-	conn   net.Conn
-	key    []byte
+	server   *Server
+	conn     net.Conn
+	e_key    []byte
+	fe_key   []byte
+	whichKey int
 }
 
-func newClient(server *Server, conn net.Conn, key []byte) *Client {
+func newClient(server *Server, conn net.Conn) *Client {
 	return &Client{
-		server: server,
-		conn:   conn,
-		key:    key,
+		server:   server,
+		conn:     conn,
+		e_key:    []byte(protocol.DEFAULT_KEY),
+		whichKey: USE_E,
 	}
 }
 
@@ -41,13 +50,46 @@ func (client *Client) Send(data interface{}, typeID uint32) {
 	tmp = append(tmp, pkt.Buf...)
 
 	// encrypt typeID & body
-	protocol.EncryptData(tmp, client.key)
+	switch client.whichKey {
+	case USE_E:
+		protocol.EncryptData(tmp, client.e_key)
+	case USE_FE:
+		protocol.EncryptData(tmp, client.fe_key)
+	}
 
 	// write packet body
 	if _, err := client.conn.Write(tmp); err != nil {
 		panic(fmt.Errorf("[FATAL] failed to write packet body! %v", err))
 	}
 	log.Printf("sent!")
+}
+
+func (client *Client) Login(pkt *protocol.Packet) {
+	var loginPkt protocol.SP_CL2LS_REQ_LOGIN
+	pkt.Decode(&loginPkt)
+	log.Printf("Got packet: %#v", loginPkt)
+
+	// !! TODO
+	resp := &protocol.SP_LS2CL_REP_LOGIN_SUCC{
+		SZID:          loginPkt.SZID,
+		ICharCount:    0,
+		ISlotNum:      1,
+		IPaymentFlag:  1,
+		IOpenBetaFlag: 0,
+		UISvrTime:     uint64(time.Now().Unix()),
+	}
+
+	client.Send(resp, protocol.P_LS2CL_REP_LOGIN_SUCC)
+	client.e_key = protocol.CreateNewKey(
+		resp.UISvrTime,
+		uint64(resp.ICharCount+1),
+		uint64(resp.ISlotNum+1),
+	)
+	client.fe_key = protocol.CreateNewKey(
+		binary.LittleEndian.Uint64([]byte(protocol.DEFAULT_KEY)),
+		uint64(loginPkt.IClientVerC),
+		1,
+	)
 }
 
 func (client *Client) ClientHandler() {
@@ -78,22 +120,14 @@ func (client *Client) ClientHandler() {
 		}
 
 		// decrypt && grab typeID
-		protocol.DecryptData(tmp[:sz], client.key)
+		protocol.DecryptData(tmp[:sz], client.e_key)
 		typeID := int(binary.LittleEndian.Uint32(tmp[:4]))
 
 		log.Printf("Got packet ID: %x, with a sizeof: %d\n", typeID, sz)
 		pkt := protocol.NewPacket(tmp[4:sz])
 		switch typeID {
 		case protocol.P_CL2LS_REQ_LOGIN:
-			var loginPkt protocol.SP_CL2LS_REQ_LOGIN
-			pkt.Decode(&loginPkt)
-			log.Printf("Got packet: %#v", loginPkt)
-
-			client.Send(&protocol.SP_LS2CL_REP_LOGIN_FAIL{
-				IErrorCode: protocol.LOGIN_FAIL_EULA_ERROR,
-				SZID:       loginPkt.SZID,
-			}, protocol.P_LS2CL_REP_LOGIN_FAIL)
-
+			client.Login(pkt)
 		default:
 			log.Printf("[WARN] unsupported packet ID: %x\n", typeID)
 		}

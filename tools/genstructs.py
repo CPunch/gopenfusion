@@ -5,7 +5,7 @@
     Takes raw structures from a decompiled 'Assembly - CSharp.dll' from a main.unity3d fusionfall beta client,
     and transpiles them to gopenfusion's custom packet structure & tags. This requires a compiler installed,
     since struct field padding is grabbed via the `offsetof()` C macro. Some manual rearranging of structures
-    from the disassembled source might be needed. This script can also be used to generate c-style structures
+    from the disassembled source might be needed. This script can also be modified to generate c-style structures
     (because it already does!)
 
     usage: ./genstructs.py [IN.cs] > structs.go
@@ -173,10 +173,8 @@ class StructTranspiler:
 
     def toCStyle(self) -> str:
         source = "typedef struct {\n"
-
         for field in self.fields:
             source += "\t%s %s;\n" % (field.ctype, field.cname)
-
         source += "} %s;\n" % self.name
 
         for field in self.fields:
@@ -229,7 +227,6 @@ class StructTranspiler:
         source += "\n}\n"
         return source
 
-
 if __name__ == '__main__':
     inFilePath = sys.argv[1]
 
@@ -245,6 +242,7 @@ if __name__ == '__main__':
         except:
             break
 
+    # check for undefined types in structures and patch the sizes
     for i in range(len(structs)):
         struct = structs[i]
         f = struct.needsPatching()
@@ -252,10 +250,10 @@ if __name__ == '__main__':
             name = struct.fields[f].type
             for s in structs:
                 if s.name == name:
-                    if struct.fields[f].size > 1:
+                    if struct.fields[f].size > 1: # was it an array?
                         structs[i].fields[f].type = ("[%d]" % struct.fields[f].size) + struct.fields[f].type
-                    structs[i].fields[f].size *= s.size
-                    structs[i].fields[f].needsPatching = False
+                    structs[i].fields[f].size *= s.size # field's size was set to 1 even if it wasn't an array
+                    structs[i].fields[f].needsPatching = False # mark done
 
             f = struct.needsPatching()
 
@@ -272,10 +270,12 @@ if __name__ == '__main__':
     compiler.compile(['tmp.c'])
     compiler.link_executable(['tmp.o'], 'tmp')
 
+    # patch padding bytes
     lines = subprocess.getoutput(['./tmp']).splitlines()
     for i in range(len(structs)):
         structs[i].populatePadding(lines[i].split(" "))
-    
+
+    # emit structures
     for struct in structs:
         print(struct.toGoStyle())
 

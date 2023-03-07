@@ -1,8 +1,12 @@
 package protocol
 
+import (
+	"encoding/binary"
+)
+
 const (
-	E_KEY      = "m@rQn~W#"
-	KEY_LENGTH = 8
+	DEFAULT_KEY = "m@rQn~W#"
+	KEY_LENGTH  = 8
 )
 
 func encrypt_byte_change_A(ERSize int, data []byte) int {
@@ -42,4 +46,15 @@ func DecryptData(buff, key []byte) {
 	ERSize := len(buff)%(KEY_LENGTH/2+1)*2 + KEY_LENGTH
 	size := encrypt_byte_change_A(ERSize, buff)
 	xorData(buff, key, size)
+}
+
+func CreateNewKey(uTime uint64, iv1, iv2 uint64) []byte {
+	num := iv1 + 1
+	num2 := iv2 + 1
+
+	dEKey := uint64(binary.LittleEndian.Uint64([]byte(DEFAULT_KEY)))
+	key := dEKey * (uTime * num * num2)
+	buf := make([]byte, 8)
+	binary.LittleEndian.PutUint64(buf, uint64(key))
+	return buf
 }
