@@ -3,10 +3,11 @@
     genstructs.py - gopenfusion
 
     Takes raw structures from a decompiled 'Assembly - CSharp.dll' from a main.unity3d fusionfall beta client,
-    and transpiles them to gopenfusion's custom packet structure & tags. This requires a C compiler installed,
-    since struct field padding is grabbed via the `offsetof()` C macro. Some manual rearranging of structures
-    from the disassembled source might be needed, however the script should 'just werk' off of ilspycmd output.
-    This script can also be modified to generate c-style structures (because it already does!)
+    and transpiles them to gopenfusion's custom packet structure & tags. Some useful constants are also grabbed
+    and transpiled. This requires a C compiler installed, since struct field padding is grabbed via the `offsetof()`
+    C macro. Some manual rearranging of structures from the disassembled source might be needed, however the script
+    should 'just werk' off of ilspycmd output. This script can also be modified to generate c-style structures
+    (because it already does!)
 
     usage: ./genstructs.py [IN.cs] > structs.go
 
@@ -239,17 +240,13 @@ class StructTranspiler:
         source += "\n}\n"
         return source
 
-if __name__ == '__main__':
-    inFilePath = sys.argv[1]
-
-    iFile = open(inFilePath, "r")
-    lines = iFile.readlines()
+def transpileStructs(lines: list[str]) -> list[StructTranspiler]:
     structs: list[StructTranspiler] = []
 
     def tryPatching(struct: StructTranspiler) -> StructTranspiler:
         f = struct.needsPatching()
         lastf = None
-        while f != -1:
+        while f != -1 and lastf != f:
             # search for existing struct
             name = struct.fields[f].type
             for s in structs:
@@ -259,10 +256,9 @@ if __name__ == '__main__':
                     struct.fields[f].size *= s.size # field's size was set to 1 even if it wasn't an array
                     struct.fields[f].needsPatching = False # mark done
                     break
+
             lastf = f
             f = struct.needsPatching()
-            if lastf == f: # we're stuck, we'll try patching later
-                break
 
         return struct
 
@@ -309,13 +305,69 @@ if __name__ == '__main__':
     for i in range(len(structs)):
         structs[i].populatePadding(lines[i].split(" "))
 
+    return structs
+
+class ConstTranspiler:
+    def __init__(self, lines: list[str]) -> None:
+        self.lines = lines
+        self.cursor = 0
+        self.value = 0
+        self.name = 0
+
+    def getLine(self) -> str:
+        return self.lines[self.cursor]
+
+    def getNextLine(self) -> str:
+        self.cursor += 1
+        return self.getLine()
+
+    # skip lines until we run into a 'public const uint '
+    def searchForConst(self) -> None:
+        line = self.getLine()
+        while True:
+            if line.find("public const uint ") != -1:
+                nameStart = (line.find("public const uint ") + len("public const uint "))
+                self.value = int(line[(line.find("= ", nameStart) + len("= ")):line.find("u;")])
+                self.name = line[nameStart:line.find(" = ", nameStart)]
+                self.getNextLine()
+                return
+            line = self.getNextLine()
+
+def transpileConsts(lines: list[str]) -> list[ConstTranspiler]:
+    consts: list[ConstTranspiler] = []
+
+    while True:
+        try:
+            const = ConstTranspiler(lines)
+            const.searchForConst()
+
+            consts.append(const)
+            lines = const.lines[const.cursor:]
+        except:
+            break
+
+    return consts
+
+if __name__ == '__main__':
+    inFilePath = sys.argv[1]
+
+    iFile = open(inFilePath, "r")
+    lines = iFile.readlines()
+    structs = transpileStructs(lines)
+    consts = transpileConsts(lines)
+
     # emit structures
     source = "// generated via genstructs.py"
     if WARN_INVALID:
         source += " - WARN!! Not all structures are valid, grep 'WARNING'\n"
     else:
         source += " - All structure padding and member alignment verified\n"
-    source += "package protocol\n\n"
+
+    source += "package protocol\n\nconst (\n"
+    for const in consts:
+        source += "\t%s = 0x%x\n" % (const.name, const.value)
+    source += ")\n\n"
+
     for struct in structs:
         source += struct.toGoStyle() + "\n"
     print(source)
