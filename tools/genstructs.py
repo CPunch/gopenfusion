@@ -89,7 +89,7 @@ class StructTranspiler:
                 # all strings in fusionfall are utf16, in a uint16 array
                 self.size = int(marshal[(marshal.find("SizeConst = ") + len("SizeConst = ")):marshal.find(")]")])
                 self.type = "string"
-                self.tags += "size:\"%d\"" % self.size
+                self.addTag("size:\"%d\"" % self.size) # special tag to tell our decoder/encoder the size of the uint16[] array
                 self.ctype = "short"
                 self.cname += "[%d]" % self.size
                 self.size *= 2
@@ -123,6 +123,12 @@ class StructTranspiler:
                 self.type = sanitizeName(type)
                 self.ctype = sanitizeName(type)
                 self.needsPatching = True
+
+        def addTag(self, tag: str) -> None:
+            if len(self.tags) > 0: # if there's already a tag defined, make sure there's a space separating them
+                self.tags += " "
+
+            self.tags += tag
 
     def __init__(self, lines: list[str]) -> None:
         self.name = "UnknownStruct"
@@ -219,9 +225,7 @@ class StructTranspiler:
 
             if field.padding > 0:
                 currentSize += field.padding
-                if len(field.tags) > 0: # if there's already a tag defined, make sure there's a space separating them
-                    field.tags += " "
-                field.tags += "pad:\"%d\"" % field.padding
+                field.addTag("pad:\"%d\"" % field.padding)
 
             source += "\n\t" + field.name + " " + field.type
             if len(field.tags) > 0:
