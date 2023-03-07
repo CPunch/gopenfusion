@@ -10,8 +10,8 @@ import (
 
 type LoginServer struct {
 	listener   net.Listener
-	clients    map[*Client]bool
-	unregister chan *Client
+	clients    map[*protocol.Client]bool
+	unregister chan *protocol.Client
 }
 
 func NewLoginServer() *LoginServer {
@@ -22,8 +22,8 @@ func NewLoginServer() *LoginServer {
 
 	return &LoginServer{
 		listener:   listener,
-		clients:    make(map[*Client]bool),
-		unregister: make(chan *Client),
+		clients:    make(map[*protocol.Client]bool),
+		unregister: make(chan *protocol.Client),
 	}
 }
 
@@ -42,15 +42,15 @@ func (server *LoginServer) Start() {
 				return
 			}
 
-			client := newClient(server, conn)
+			client := protocol.NewClient(server, conn)
 			server.clients[client] = true
-			go client.ClientHandler()
 			fmt.Printf("Client %p connected\n", client)
+			go client.ClientHandler()
 		}
 	}
 }
 
-func (server *LoginServer) HandlePacket(client *Client, typeID uint32, pkt *protocol.Packet) {
+func (server *LoginServer) HandlePacket(client *protocol.Client, typeID uint32, pkt *protocol.Packet) {
 	switch typeID {
 	case protocol.P_CL2LS_REQ_LOGIN:
 		var loginPkt protocol.SP_CL2LS_REQ_LOGIN
@@ -82,6 +82,6 @@ func (server *LoginServer) HandlePacket(client *Client, typeID uint32, pkt *prot
 	}
 }
 
-func (server *LoginServer) Disconnect(client *Client) {
+func (server *LoginServer) Disconnect(client *protocol.Client) {
 	server.unregister <- client
 }
