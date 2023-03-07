@@ -90,9 +90,10 @@ func (client *Client) ClientHandler() {
 			log.Printf("Got packet: %#v", loginPkt)
 
 			client.Send(&protocol.SP_LS2CL_REP_LOGIN_FAIL{
-				ErrorCode: protocol.LOGIN_FAIL_VERSION_ERROR,
-				ID:        loginPkt.ID,
+				IErrorCode: protocol.LOGIN_FAIL_EULA_ERROR,
+				SZID:       loginPkt.SZID,
 			}, protocol.P_LS2CL_REP_LOGIN_FAIL)
+
 		default:
 			log.Printf("[WARN] unsupported packet ID: %x\n", typeID)
 		}

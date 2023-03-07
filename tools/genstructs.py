@@ -8,7 +8,7 @@
     from the disassembled source might be needed. This script can also be used to generate c-style structures
     (because it already does!)
 
-    usage: ./genstructs.py [IN.cs] > out.go
+    usage: ./genstructs.py [IN.cs] > structs.go
 '''
 from distutils.ccompiler import new_compiler
 import subprocess
