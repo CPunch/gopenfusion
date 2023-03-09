@@ -22,7 +22,7 @@ type Account struct {
 	BanReason    string
 }
 
-func NewAccount(db DBQuery, Login, Password string) (*Account, error) {
+func (db *DBHandler) NewAccount(Login, Password string) (*Account, error) {
 	hash, err := bcrypt.GenerateFromPassword([]byte(Password), 12)
 	if err != nil {
 		return nil, err
@@ -46,7 +46,7 @@ var (
 	LoginErrorInvalidPassword = fmt.Errorf("Invalid ID && Password combo!")
 )
 
-func TryLogin(db DBQuery, Login, Password string) (*Account, error) {
+func (db *DBHandler) TryLogin(Login, Password string) (*Account, error) {
 	row, err := db.Query("SELECT * FROM Accounts WHERE Login=?", Login)
 	if err != nil {
 		return nil, err

@@ -71,10 +71,10 @@ func (server *LoginServer) Login(client *Client, pkt *protocol.Packet) {
 	}
 
 	// attempt login
-	account, err := db.TryLogin(db.DefaultDB, loginPkt.SzID, loginPkt.SzPassword)
+	account, err := db.DefaultDB.TryLogin(loginPkt.SzID, loginPkt.SzPassword)
 	if err == db.LoginErrorInvalidID {
 		// this is the default behavior, auto create the account if the ID isn't in use
-		account, err = db.NewAccount(db.DefaultDB, loginPkt.SzID, loginPkt.SzPassword)
+		account, err = db.DefaultDB.NewAccount(loginPkt.SzID, loginPkt.SzPassword)
 		if err != nil {
 			// respond with a dummy login error packet so the client doesn't get softlocked
 			SendError(LOGIN_DATABASE_ERROR)
