@@ -15,26 +15,26 @@ const (
 	USE_FE
 )
 
-type ClientHandler interface {
-	HandlePacket(client *Client, typeID uint32, pkt *protocol.Packet)
-	Connect(client *Client)
-	Disconnect(client *Client)
+type PeerHandler interface {
+	HandlePacket(client *Peer, typeID uint32, pkt *protocol.Packet)
+	Connect(client *Peer)
+	Disconnect(client *Peer)
 }
 
-type Client struct {
+type Peer struct {
 	E_key     []byte
 	FE_key    []byte
 	SzID      string
 	AccountID int
 	Player    *db.Player
-	handler   ClientHandler
+	handler   PeerHandler
 	conn      net.Conn
 	alive     bool
 	whichKey  int
 }
 
-func NewClient(handler ClientHandler, conn net.Conn) *Client {
-	return &Client{
+func NewPeer(handler PeerHandler, conn net.Conn) *Peer {
+	return &Peer{
 		E_key:     []byte(protocol.DEFAULT_KEY),
 		FE_key:    nil,
 		SzID:      "",
@@ -47,7 +47,7 @@ func NewClient(handler ClientHandler, conn net.Conn) *Client {
 	}
 }
 
-func (client *Client) Send(data interface{}, typeID uint32) {
+func (client *Peer) Send(data interface{}, typeID uint32) {
 	// encode
 	pkt := protocol.NewPacket(make([]byte, 0))
 	pkt.Encode(data)
@@ -78,7 +78,7 @@ func (client *Client) Send(data interface{}, typeID uint32) {
 	}
 }
 
-func (client *Client) Kill() {
+func (client *Peer) Kill() {
 	if !client.alive {
 		return
 	}
@@ -88,7 +88,7 @@ func (client *Client) Kill() {
 	client.handler.Disconnect(client)
 }
 
-func (client *Client) ClientHandler() {
+func (client *Peer) ClientHandler() {
 	defer func() {
 		if err := recover(); err != nil {
 			log.Printf("Client %p panic'd! %v", client, err)

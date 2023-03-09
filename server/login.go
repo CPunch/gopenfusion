@@ -23,8 +23,8 @@ const (
 	LOGIN_UPDATED_EUALA_REQUIRED                = 9
 )
 
-func (server *LoginServer) AcceptLogin(client *Client, SzID string, IClientVerC int32, ISlotNum int8, data []protocol.SP_LS2CL_REP_CHAR_INFO) {
-	client.SzID = SzID
+func (server *LoginServer) AcceptLogin(peer *Peer, SzID string, IClientVerC int32, ISlotNum int8, data []protocol.SP_LS2CL_REP_CHAR_INFO) {
+	peer.SzID = SzID
 
 	resp := &protocol.SP_LS2CL_REP_LOGIN_SUCC{
 		SzID:          SzID,
@@ -35,13 +35,13 @@ func (server *LoginServer) AcceptLogin(client *Client, SzID string, IClientVerC 
 		UiSvrTime:     uint64(time.Now().Unix()),
 	}
 
-	client.Send(resp, protocol.P_LS2CL_REP_LOGIN_SUCC)
-	client.E_key = protocol.CreateNewKey(
+	peer.Send(resp, protocol.P_LS2CL_REP_LOGIN_SUCC)
+	peer.E_key = protocol.CreateNewKey(
 		resp.UiSvrTime,
 		uint64(resp.ICharCount+1),
 		uint64(resp.ISlotNum+1),
 	)
-	client.FE_key = protocol.CreateNewKey(
+	peer.FE_key = protocol.CreateNewKey(
 		binary.LittleEndian.Uint64([]byte(protocol.DEFAULT_KEY)),
 		uint64(IClientVerC),
 		1,
@@ -49,23 +49,23 @@ func (server *LoginServer) AcceptLogin(client *Client, SzID string, IClientVerC 
 
 	// send characters (if any)
 	for i := 0; i < len(data); i++ {
-		client.Send(&data[i], protocol.P_LS2CL_REP_CHAR_INFO)
+		peer.Send(&data[i], protocol.P_LS2CL_REP_CHAR_INFO)
 	}
 }
 
-func (server *LoginServer) Login(client *Client, pkt *protocol.Packet) {
+func (server *LoginServer) Login(peer *Peer, pkt *protocol.Packet) {
 	var loginPkt protocol.SP_CL2LS_REQ_LOGIN
 	pkt.Decode(&loginPkt)
 
 	SendError := func(e int32) {
-		client.Send(&protocol.SP_LS2CL_REP_LOGIN_FAIL{
+		peer.Send(&protocol.SP_LS2CL_REP_LOGIN_FAIL{
 			IErrorCode: e,
 			SzID:       loginPkt.SzID,
 		}, protocol.P_LS2CL_REP_LOGIN_FAIL)
 	}
 
 	// client is resending a login packet??
-	if client.AccountID != -1 {
+	if peer.AccountID != -1 {
 		SendError(LOGIN_ERROR)
 		panic(fmt.Errorf("Out of order P_CL2LS_REQ_LOGIN!"))
 	}
@@ -90,7 +90,7 @@ func (server *LoginServer) Login(client *Client, pkt *protocol.Packet) {
 	}
 
 	// grab player data
-	client.AccountID = account.AccountID
+	peer.AccountID = account.AccountID
 	plrs, err := db.DefaultDB.GetPlayers(account.AccountID)
 	if err != nil {
 		SendError(LOGIN_DATABASE_ERROR)
@@ -121,25 +121,25 @@ func (server *LoginServer) Login(client *Client, pkt *protocol.Packet) {
 		charInfo = append(charInfo, info)
 	}
 
-	server.AcceptLogin(client, loginPkt.SzID, loginPkt.IClientVerC, 1, charInfo)
+	server.AcceptLogin(peer, loginPkt.SzID, loginPkt.IClientVerC, 1, charInfo)
 }
 
-func (server *LoginServer) SaveCharacterName(client *Client, pkt *protocol.Packet) {
+func (server *LoginServer) SaveCharacterName(peer *Peer, pkt *protocol.Packet) {
 	var charPkt protocol.SP_CL2LS_REQ_SAVE_CHAR_NAME
 	pkt.Decode(&charPkt)
 
-	if client.AccountID == -1 {
-		client.Send(&protocol.SP_LS2CL_REP_SAVE_CHAR_NAME_FAIL{}, protocol.P_LS2CL_REP_SAVE_CHAR_NAME_FAIL)
+	if peer.AccountID == -1 {
+		peer.Send(&protocol.SP_LS2CL_REP_SAVE_CHAR_NAME_FAIL{}, protocol.P_LS2CL_REP_SAVE_CHAR_NAME_FAIL)
 		panic(fmt.Errorf("Out of order P_LS2CL_REP_SAVE_CHAR_NAME_FAIL!"))
 	}
 
-	PlayerID, err := db.DefaultDB.NewPlayer(client.AccountID, charPkt.SzFirstName, charPkt.SzLastName, int(charPkt.ISlotNum))
+	PlayerID, err := db.DefaultDB.NewPlayer(peer.AccountID, charPkt.SzFirstName, charPkt.SzLastName, int(charPkt.ISlotNum))
 	if err != nil {
-		client.Send(&protocol.SP_LS2CL_REP_SAVE_CHAR_NAME_FAIL{}, protocol.P_LS2CL_REP_SAVE_CHAR_NAME_FAIL)
+		peer.Send(&protocol.SP_LS2CL_REP_SAVE_CHAR_NAME_FAIL{}, protocol.P_LS2CL_REP_SAVE_CHAR_NAME_FAIL)
 		panic(err)
 	}
 
-	client.Send(&protocol.SP_LS2CL_REP_SAVE_CHAR_NAME_SUCC{
+	peer.Send(&protocol.SP_LS2CL_REP_SAVE_CHAR_NAME_SUCC{
 		IPC_UID:     int64(PlayerID),
 		ISlotNum:    charPkt.ISlotNum,
 		IGender:     charPkt.IGender,
@@ -174,28 +174,28 @@ func validateCharacterCreation(character *protocol.SP_CL2LS_REQ_CHAR_CREATE) boo
 	return true
 }
 
-func (server *LoginServer) CharacterCreate(client *Client, pkt *protocol.Packet) {
+func (server *LoginServer) CharacterCreate(peer *Peer, pkt *protocol.Packet) {
 	var charPkt protocol.SP_CL2LS_REQ_CHAR_CREATE
 	pkt.Decode(&charPkt)
 
 	if !validateCharacterCreation(&charPkt) {
-		client.Send(&protocol.SP_LS2CL_REP_SHARD_SELECT_FAIL{IErrorCode: 2}, protocol.P_LS2CL_REP_SHARD_SELECT_FAIL)
+		peer.Send(&protocol.SP_LS2CL_REP_SHARD_SELECT_FAIL{IErrorCode: 2}, protocol.P_LS2CL_REP_SHARD_SELECT_FAIL)
 		panic(fmt.Errorf("invalid SP_CL2LS_REQ_CHAR_CREATE!"))
 	}
 
-	if err := db.DefaultDB.FinishPlayer(&charPkt, client.AccountID); err != nil {
-		client.Send(&protocol.SP_LS2CL_REP_SHARD_SELECT_FAIL{IErrorCode: 2}, protocol.P_LS2CL_REP_SHARD_SELECT_FAIL)
+	if err := db.DefaultDB.FinishPlayer(&charPkt, peer.AccountID); err != nil {
+		peer.Send(&protocol.SP_LS2CL_REP_SHARD_SELECT_FAIL{IErrorCode: 2}, protocol.P_LS2CL_REP_SHARD_SELECT_FAIL)
 		panic(err)
 	}
 
 	plr, err := db.DefaultDB.GetPlayer(int(charPkt.PCStyle.IPC_UID))
 	if err != nil {
-		client.Send(&protocol.SP_LS2CL_REP_SHARD_SELECT_FAIL{IErrorCode: 2}, protocol.P_LS2CL_REP_SHARD_SELECT_FAIL)
+		peer.Send(&protocol.SP_LS2CL_REP_SHARD_SELECT_FAIL{IErrorCode: 2}, protocol.P_LS2CL_REP_SHARD_SELECT_FAIL)
 		panic(err)
 	}
 
 	PCStyle, PCStyle2 := util.Player2PCStyle(plr)
-	client.Send(&protocol.SP_LS2CL_REP_CHAR_CREATE_SUCC{
+	peer.Send(&protocol.SP_LS2CL_REP_CHAR_CREATE_SUCC{
 		ILevel:     int16(plr.Level),
 		SPC_Style:  PCStyle,
 		SPC_Style2: PCStyle2,

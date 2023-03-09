@@ -10,13 +10,14 @@ import (
 )
 
 /*
-	this file handles serializing (and deserializing) structs to alignment-strict c structures
+	this file handles serializing (and deserializing) structs to alignment-strict c structures generated via `tools/genstructs.py`.
+	see script for details on usage!
 */
 
 type Packet struct {
 	ByteOrder binary.ByteOrder
 	Buf       []byte
-	cursor    int // to keep track of things like member alignment
+	cursor    int // to keep track of things like member alignment for easier debugging
 }
 
 const PACK_ALIGN = 4
@@ -32,12 +33,6 @@ func NewPacket(buf []byte) *Packet {
 
 func (pkt *Packet) ResetCursor() {
 	pkt.cursor = 0
-}
-
-func (pkt *Packet) CompletePacket(typeID uint32) {
-	tmp := make([]byte, 4)
-	pkt.ByteOrder.PutUint32(tmp, typeID)
-	pkt.Buf = append(tmp, pkt.Buf...)
 }
 
 func (pkt *Packet) writeRaw(data []byte) {
