@@ -125,12 +125,12 @@ func (pkt *Packet) Encode(data interface{}) {
 		for i := 0; i < sz; i++ {
 			pkt.encodeStructField(rv.Type().Field(i), rv.Field(i))
 		}
-	case reflect.Slice: // (untested)
+	case reflect.Array:
 		sz := rv.Len()
 
 		// encode data
 		for i := 0; i < sz; i++ {
-			elem := rv.Index(i).Addr()
+			elem := rv.Index(i)
 			pkt.Encode(elem.Addr().Interface())
 		}
 	case reflect.Uint8:
@@ -215,7 +215,7 @@ func (pkt *Packet) Decode(data interface{}) {
 		for i := 0; i < sz; i++ {
 			pkt.decodeStructField(rv.Type().Field(i), rv.Field(i))
 		}
-	case reflect.Array: // (untested)
+	case reflect.Array:
 		sz := rv.Len()
 
 		// decode data
