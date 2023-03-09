@@ -1,7 +1,6 @@
 package server
 
 import (
-	"fmt"
 	"log"
 	"net"
 	"sync"
@@ -67,13 +66,11 @@ func (server *LoginServer) HandlePacket(client *Client, typeID uint32, pkt *prot
 func (server *LoginServer) Disconnect(client *Client) {
 	server.lock.Lock()
 	delete(server.clients, client)
-	fmt.Printf("Client %p disconnected\n", client)
 	server.lock.Unlock()
 }
 
 func (server *LoginServer) Connect(client *Client) {
 	server.lock.Lock()
 	server.clients[client] = true
-	fmt.Printf("Client %p connected\n", client)
 	server.lock.Unlock()
 }

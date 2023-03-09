@@ -148,16 +148,49 @@ func (server *LoginServer) SaveCharacterName(client *Client, pkt *protocol.Packe
 	}, protocol.P_LS2CL_REP_SAVE_CHAR_NAME_SUCC)
 }
 
+func validateCharacterCreation(character *protocol.SP_CL2LS_REQ_CHAR_CREATE) bool {
+	// thanks openfusion!
+	// all the values have been determined from analyzing client code and xdt
+	// and double checked using cheat engine
+
+	// check base parameters
+	style := &character.PCStyle
+	if !(style.IBody >= 0 && style.IBody <= 2 &&
+		style.IEyeColor >= 1 && style.IEyeColor <= 5 &&
+		style.IGender >= 1 && style.IGender <= 2 &&
+		style.IHairColor >= 1 && style.IHairColor <= 18) &&
+		style.IHeight >= 0 && style.IHeight <= 4 &&
+		style.INameCheck >= 0 && style.INameCheck <= 2 &&
+		style.ISkinColor >= 1 && style.ISkinColor <= 12 {
+		return false
+	}
+
+	// facestyle and hairstyle are gender dependent
+	if !(style.IGender == 1 && style.IFaceStyle >= 1 && style.IFaceStyle <= 5 && style.IHairStyle >= 1 && style.IHairStyle <= 23) &&
+		!(style.IGender == 2 && style.IFaceStyle >= 6 && style.IFaceStyle <= 10 && style.IHairStyle >= 25 && style.IHairStyle <= 45) {
+		return false
+	}
+
+	return true
+}
+
 func (server *LoginServer) CharacterCreate(client *Client, pkt *protocol.Packet) {
 	var charPkt protocol.SP_CL2LS_REQ_CHAR_CREATE
 	pkt.Decode(&charPkt)
 
+	if !validateCharacterCreation(&charPkt) {
+		client.Send(&protocol.SP_LS2CL_REP_SHARD_SELECT_FAIL{IErrorCode: 2}, protocol.P_LS2CL_REP_SHARD_SELECT_FAIL)
+		panic(fmt.Errorf("invalid SP_CL2LS_REQ_CHAR_CREATE!"))
+	}
+
 	if err := db.DefaultDB.FinishPlayer(&charPkt, client.AccountID); err != nil {
+		client.Send(&protocol.SP_LS2CL_REP_SHARD_SELECT_FAIL{IErrorCode: 2}, protocol.P_LS2CL_REP_SHARD_SELECT_FAIL)
 		panic(err)
 	}
 
 	plr, err := db.DefaultDB.GetPlayer(int(charPkt.PCStyle.IPC_UID))
 	if err != nil {
+		client.Send(&protocol.SP_LS2CL_REP_SHARD_SELECT_FAIL{IErrorCode: 2}, protocol.P_LS2CL_REP_SHARD_SELECT_FAIL)
 		panic(err)
 	}
 
