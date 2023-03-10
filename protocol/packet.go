@@ -20,8 +20,6 @@ type Packet struct {
 	cursor    int // to keep track of things like member alignment for easier debugging
 }
 
-const PACK_ALIGN = 4
-
 func NewPacket(buf []byte) *Packet {
 	pkt := &Packet{
 		ByteOrder: binary.LittleEndian,

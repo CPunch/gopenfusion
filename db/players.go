@@ -2,7 +2,6 @@ package db
 
 import (
 	"database/sql"
-	"fmt"
 
 	"github.com/CPunch/GopenFusion/config"
 	"github.com/CPunch/GopenFusion/protocol"
@@ -112,7 +111,7 @@ func (db *DBHandler) FinishPlayer(character *protocol.SP_CL2LS_REQ_CHAR_CREATE, 
 		// update Inventory
 		items := [3]int16{character.SOn_Item.IEquipUBID, character.SOn_Item.IEquipLBID, character.SOn_Item.IEquipFootID}
 		for i := 0; i < len(items); i++ {
-			_, err = tx.Exec("INSERT INTO Inventory (PlayerID, Slot, ID, Type, Opt) VALUES (?, ?, ?, ?, 1)", character.PCStyle.IPC_UID, i+1, items[i], i+1)
+			_, err = tx.Exec("INSERT INTO Inventory (PlayerID, Slot, ID, Type, Opt) VALUES (?, ?, ?, ?, 1)", character.PCStyle.IPC_UID, i, items[i], i+1)
 			if err != nil {
 				return err
 			}
@@ -132,19 +131,21 @@ func (db *DBHandler) FinishTutorial(PlayerID, AccountID int) error {
 	return nil
 }
 
-// returns the deleted player row
-func (db *DBHandler) DeletePlayer(PlayerID, AccountID int) (*Player, error) {
-	row, err := db.Query("DELETE FROM Players WHERE AccountID = ? AND PlayerID = ? RETURNING *")
+// returns the deleted Slot number
+func (db *DBHandler) DeletePlayer(PlayerID, AccountID int) (int, error) {
+	row, err := db.Query("DELETE FROM Players WHERE AccountID = ? AND PlayerID = ? RETURNING Slot")
 	if err != nil {
-		return nil, err
+		return -1, err
 	}
 
-	var plr Player
-	if err := scan.Row(&plr, row); err != nil {
-		return nil, err
+	var slot int
+	for row.Next() {
+		if err := row.Scan(&slot); err != nil {
+			return -1, err
+		}
 	}
 
-	return &plr, nil
+	return slot, nil
 }
 
 func (db *DBHandler) GetPlayer(PlayerID int) (*Player, error) {
@@ -165,7 +166,6 @@ func (db *DBHandler) GetPlayer(PlayerID int) (*Player, error) {
 		return nil, err
 	}
 
-	fmt.Print(PlayerID)
 	var plr Player
 	for rows.Next() {
 		if err := rows.Scan(

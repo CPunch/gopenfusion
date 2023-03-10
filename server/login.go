@@ -124,6 +124,17 @@ func (server *LoginServer) Login(peer *Peer, pkt *protocol.Packet) {
 	server.AcceptLogin(peer, loginPkt.SzID, loginPkt.IClientVerC, 1, charInfo)
 }
 
+func (server *LoginServer) CheckCharacterName(peer *Peer, pkt *protocol.Packet) {
+	var charPkt protocol.SP_CL2LS_REQ_CHECK_CHAR_NAME
+	pkt.Decode(&charPkt)
+
+	// just auto accept, client resends this data later
+	peer.Send(&protocol.SP_LS2CL_REP_CHECK_CHAR_NAME_SUCC{
+		SzFirstName: charPkt.SzFirstName,
+		SzLastName:  charPkt.SzLastName,
+	}, protocol.P_LS2CL_REP_CHECK_CHAR_NAME_SUCC)
+}
+
 func (server *LoginServer) SaveCharacterName(peer *Peer, pkt *protocol.Packet) {
 	var charPkt protocol.SP_CL2LS_REQ_SAVE_CHAR_NAME
 	pkt.Decode(&charPkt)
@@ -133,6 +144,7 @@ func (server *LoginServer) SaveCharacterName(peer *Peer, pkt *protocol.Packet) {
 		panic(fmt.Errorf("Out of order P_LS2CL_REP_SAVE_CHAR_NAME_FAIL!"))
 	}
 
+	// TODO: sanity check SzFirstName && SzLastName
 	PlayerID, err := db.DefaultDB.NewPlayer(peer.AccountID, charPkt.SzFirstName, charPkt.SzLastName, int(charPkt.ISlotNum))
 	if err != nil {
 		peer.Send(&protocol.SP_LS2CL_REP_SAVE_CHAR_NAME_FAIL{}, protocol.P_LS2CL_REP_SAVE_CHAR_NAME_FAIL)
@@ -199,6 +211,33 @@ func (server *LoginServer) CharacterCreate(peer *Peer, pkt *protocol.Packet) {
 		ILevel:     int16(plr.Level),
 		SPC_Style:  PCStyle,
 		SPC_Style2: PCStyle2,
-		SOn_Item:   protocol.SOnItem{ /*TODO*/ },
+		SOn_Item:   charPkt.SOn_Item, // if the items were faked, we don't really care since the db only stores the sanitized fields
 	}, protocol.P_LS2CL_REP_CHAR_CREATE_SUCC)
+}
+
+func (server *LoginServer) CharacterDelete(peer *Peer, pkt *protocol.Packet) {
+	var charPkt protocol.SP_CL2LS_REQ_CHAR_DELETE
+	pkt.Decode(&charPkt)
+
+	slot, err := db.DefaultDB.DeletePlayer(int(charPkt.IPC_UID), peer.AccountID)
+	if err != nil {
+		peer.Send(&protocol.SP_LS2CL_REP_SHARD_SELECT_FAIL{IErrorCode: 2}, protocol.P_LS2CL_REP_SHARD_SELECT_FAIL)
+		panic(err)
+	}
+
+	peer.Send(&protocol.SP_LS2CL_REP_CHAR_DELETE_SUCC{
+		ISlotNum: int8(slot),
+	}, protocol.P_LS2CL_REP_CHAR_DELETE_SUCC)
+}
+
+func (server *LoginServer) FinishTutorial(peer *Peer, pkt *protocol.Packet) {
+	var charPkt protocol.SP_CL2LS_REQ_SAVE_CHAR_TUTOR
+	pkt.Decode(&charPkt)
+
+	if err := db.DefaultDB.FinishTutorial(int(charPkt.IPC_UID), peer.AccountID); err != nil {
+		peer.Send(&protocol.SP_LS2CL_REP_SHARD_SELECT_FAIL{IErrorCode: 2}, protocol.P_LS2CL_REP_SHARD_SELECT_FAIL)
+		panic(err)
+	}
+
+	// no response
 }

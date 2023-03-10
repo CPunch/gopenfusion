@@ -1,8 +1,9 @@
 package db
 
 import (
+	"database/sql"
+
 	"github.com/CPunch/GopenFusion/protocol"
-	"github.com/blockloop/scan"
 )
 
 type Inventory struct {
@@ -16,14 +17,21 @@ type Inventory struct {
 
 // start && end are both inclusive
 func (db *DBHandler) GetPlayerInventorySlots(PlayerID int, start int, end int) ([]protocol.SItemBase, error) {
-	rows, err := db.Query("SELECT * FROM Inventory WHERE Slot BETWEEN ? AND ? AND PlayerID = ?", start, end, PlayerID)
+	rows, err := db.Query("SELECT PlayerID, Slot, ID, Type, Opt, TimeLimit FROM Inventory WHERE Slot BETWEEN ? AND ? AND PlayerID = ?", start, end, PlayerID)
 	if err != nil {
 		return nil, err
 	}
 
 	var inven []Inventory
-	if err := scan.Row(&inven, rows); err != nil {
-		return make([]protocol.SItemBase, end-start), nil
+	for rows.Next() {
+		item := Inventory{}
+
+		if err := rows.Scan(
+			&item.PlayerID, &item.Slot, &item.ID, &item.Type, &item.Opt, &item.TimeLimit); err != nil {
+			return nil, err
+		}
+
+		inven = append(inven, item)
 	}
 
 	// populate an SItemBase array
@@ -39,23 +47,25 @@ func (db *DBHandler) GetPlayerInventorySlots(PlayerID int, start int, end int) (
 	return items, nil
 }
 
-// start is inclusive TODO: needs to be a transaction !!
+// start is inclusive
 func (db *DBHandler) SetPlayerInventorySlots(PlayerID int, start int, items []protocol.SItemBase) error {
-	// delete inventory slots
-	_, err := db.Query("DELETE FROM Inventory WHERE Slot BETWEEN ? AND ? AND PlayerID = ?", start, start+len(items)-1, PlayerID)
-	if err != nil {
-		return err
-	}
+	return db.Transaction(func(tx *sql.Tx) error {
+		// delete inventory slots
+		_, err := db.Query("DELETE FROM Inventory WHERE Slot BETWEEN ? AND ? AND PlayerID = ?", start, start+len(items)-1, PlayerID)
+		if err != nil {
+			return err
+		}
 
-	// insert inventory
-	for i, item := range items {
-		if item.IID != 0 {
-			_, err := db.Query("INSERT INTO Inventory (PlayerID, Slot, ID, Type, Opt, TimeLimit) VALUES (?, ?, ?, ?, ?, ?)", PlayerID, start+i, item.IID, item.IType, item.IOpt, item.ITimeLimit)
-			if err != nil {
-				return err
+		// insert inventory
+		for i, item := range items {
+			if item.IID != 0 {
+				_, err := db.Query("INSERT INTO Inventory (PlayerID, Slot, ID, Type, Opt, TimeLimit) VALUES (?, ?, ?, ?, ?, ?)", PlayerID, start+i, item.IID, item.IType, item.IOpt, item.ITimeLimit)
+				if err != nil {
+					return err
+				}
 			}
 		}
-	}
 
-	return nil
+		return nil
+	})
 }

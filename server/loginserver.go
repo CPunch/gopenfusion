@@ -47,17 +47,31 @@ func (server *LoginServer) HandlePacket(peer *Peer, typeID uint32, pkt *protocol
 	case protocol.P_CL2LS_REQ_LOGIN:
 		server.Login(peer, pkt)
 	case protocol.P_CL2LS_REQ_CHECK_CHAR_NAME:
-		var charPkt protocol.SP_CL2LS_REQ_CHECK_CHAR_NAME
-		pkt.Decode(&charPkt)
-
-		peer.Send(&protocol.SP_LS2CL_REP_CHECK_CHAR_NAME_SUCC{
-			SzFirstName: charPkt.SzFirstName,
-			SzLastName:  charPkt.SzLastName,
-		}, protocol.P_LS2CL_REP_CHECK_CHAR_NAME_SUCC)
+		server.CheckCharacterName(peer, pkt)
 	case protocol.P_CL2LS_REQ_SAVE_CHAR_NAME:
 		server.SaveCharacterName(peer, pkt)
 	case protocol.P_CL2LS_REQ_CHAR_CREATE:
 		server.CharacterCreate(peer, pkt)
+	case protocol.P_CL2LS_REQ_CHAR_SELECT:
+		/* stubbed */
+	case protocol.P_CL2LS_REQ_CHAR_DELETE:
+		server.CharacterDelete(peer, pkt)
+	case protocol.P_CL2LS_REQ_SHARD_SELECT:
+		/* stubbed */
+	case protocol.P_CL2LS_REQ_SHARD_LIST_INFO:
+		/* stubbed */
+	case protocol.P_CL2LS_CHECK_NAME_LIST:
+		/* stubbed */
+	case protocol.P_CL2LS_REQ_SAVE_CHAR_TUTOR:
+		server.FinishTutorial(peer, pkt)
+	case protocol.P_CL2LS_REQ_PC_EXIT_DUPLICATE:
+		/* stubbed */
+	case protocol.P_CL2LS_REP_LIVE_CHECK:
+		/* stubbed */
+	case protocol.P_CL2LS_REQ_CHANGE_CHAR_NAME:
+		/* stubbed */
+	case protocol.P_CL2LS_REQ_SERVER_SELECT:
+		/* stubbed */
 	default:
 		log.Printf("[WARN] unsupported packet ID: %x\n", typeID)
 	}
