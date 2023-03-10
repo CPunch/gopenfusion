@@ -211,7 +211,7 @@ func (server *LoginServer) CharacterCreate(peer *Peer, pkt *protocol.Packet) {
 		ILevel:     int16(plr.Level),
 		SPC_Style:  PCStyle,
 		SPC_Style2: PCStyle2,
-		SOn_Item:   charPkt.SOn_Item, // if the items were faked, we don't really care since the db only stores the sanitized fields
+		SOn_Item:   charPkt.SOn_Item, // if items were faked, we don't really care since the db only stores the sanitized fields
 	}, protocol.P_LS2CL_REP_CHAR_CREATE_SUCC)
 }
 

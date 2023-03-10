@@ -9,9 +9,9 @@ import (
 )
 
 type LoginServer struct {
-	listener net.Listener
-	peers    map[*Peer]bool
-	lock     sync.Mutex
+	listener  net.Listener
+	peers     map[*Peer]bool
+	peersLock sync.Mutex
 }
 
 func NewLoginServer() *LoginServer {
@@ -78,13 +78,13 @@ func (server *LoginServer) HandlePacket(peer *Peer, typeID uint32, pkt *protocol
 }
 
 func (server *LoginServer) Disconnect(peer *Peer) {
-	server.lock.Lock()
+	server.peersLock.Lock()
 	delete(server.peers, peer)
-	server.lock.Unlock()
+	server.peersLock.Unlock()
 }
 
 func (server *LoginServer) Connect(peer *Peer) {
-	server.lock.Lock()
+	server.peersLock.Lock()
 	server.peers[peer] = true
-	server.lock.Unlock()
+	server.peersLock.Unlock()
 }
