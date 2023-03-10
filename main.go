@@ -1,8 +1,8 @@
 package main
 
 import (
-	"github.com/CPunch/GopenFusion/db"
-	"github.com/CPunch/GopenFusion/server"
+	"github.com/CPunch/gopenfusion/db"
+	"github.com/CPunch/gopenfusion/server"
 )
 
 func main() {

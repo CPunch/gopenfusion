@@ -5,7 +5,7 @@ import (
 	"net"
 	"sync"
 
-	"github.com/CPunch/GopenFusion/protocol"
+	"github.com/CPunch/gopenfusion/protocol"
 )
 
 type LoginServer struct {

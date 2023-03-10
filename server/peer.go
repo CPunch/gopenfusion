@@ -6,8 +6,8 @@ import (
 	"log"
 	"net"
 
-	"github.com/CPunch/GopenFusion/db"
-	"github.com/CPunch/GopenFusion/protocol"
+	"github.com/CPunch/gopenfusion/db"
+	"github.com/CPunch/gopenfusion/protocol"
 )
 
 const (

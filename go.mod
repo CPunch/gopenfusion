@@ -1,4 +1,4 @@
-module github.com/CPunch/GopenFusion
+module github.com/CPunch/gopenfusion
 
 go 1.19
 

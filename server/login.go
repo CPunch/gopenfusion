@@ -5,10 +5,10 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/CPunch/GopenFusion/config"
-	"github.com/CPunch/GopenFusion/db"
-	"github.com/CPunch/GopenFusion/protocol"
-	"github.com/CPunch/GopenFusion/util"
+	"github.com/CPunch/gopenfusion/config"
+	"github.com/CPunch/gopenfusion/db"
+	"github.com/CPunch/gopenfusion/protocol"
+	"github.com/CPunch/gopenfusion/util"
 )
 
 const (

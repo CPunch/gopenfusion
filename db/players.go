@@ -3,8 +3,8 @@ package db
 import (
 	"database/sql"
 
-	"github.com/CPunch/GopenFusion/config"
-	"github.com/CPunch/GopenFusion/protocol"
+	"github.com/CPunch/gopenfusion/config"
+	"github.com/CPunch/gopenfusion/protocol"
 	"github.com/blockloop/scan"
 )
 

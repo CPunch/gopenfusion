@@ -5,7 +5,7 @@ import (
 
 	"golang.org/x/crypto/bcrypt"
 
-	"github.com/CPunch/GopenFusion/protocol"
+	"github.com/CPunch/gopenfusion/protocol"
 	"github.com/blockloop/scan"
 )
 

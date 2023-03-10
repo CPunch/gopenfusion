@@ -1,8 +1,8 @@
 package util
 
 import (
-	"github.com/CPunch/GopenFusion/db"
-	"github.com/CPunch/GopenFusion/protocol"
+	"github.com/CPunch/gopenfusion/db"
+	"github.com/CPunch/gopenfusion/protocol"
 )
 
 func Player2PCStyle(plr *db.Player) (protocol.SPCStyle, protocol.SPCStyle2) {
