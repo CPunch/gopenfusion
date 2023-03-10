@@ -35,6 +35,7 @@ func (server *LoginServer) AcceptLogin(peer *Peer, SzID string, IClientVerC int3
 		UiSvrTime:     uint64(time.Now().Unix()),
 	}
 
+	// swap keys
 	peer.Send(resp, protocol.P_LS2CL_REP_LOGIN_SUCC)
 	peer.E_key = protocol.CreateNewKey(
 		resp.UiSvrTime,

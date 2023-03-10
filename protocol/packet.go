@@ -3,10 +3,11 @@ package protocol
 import (
 	"encoding/binary"
 	"fmt"
+	"io"
+	"log"
 	"reflect"
 	"strconv"
 	"unicode/utf16"
-	"unsafe"
 )
 
 /*
@@ -17,60 +18,61 @@ import (
 type Packet struct {
 	ByteOrder binary.ByteOrder
 	Buf       []byte
-	cursor    int // to keep track of things like member alignment for easier debugging
 }
 
 func NewPacket(buf []byte) *Packet {
 	pkt := &Packet{
 		ByteOrder: binary.LittleEndian,
 		Buf:       buf,
-		cursor:    0,
 	}
 	return pkt
 }
 
-func (pkt *Packet) ResetCursor() {
-	pkt.cursor = 0
-}
-
 func (pkt *Packet) writeRaw(data []byte) {
 	pkt.Buf = append(pkt.Buf, data...)
-	pkt.cursor += len(data)
 }
 
-func (pkt *Packet) Write(data []byte) {
+func (pkt *Packet) Write(data []byte) (int, error) {
 	pkt.writeRaw(data)
 
 	if len(pkt.Buf) > CN_PACKET_BUFFER_SIZE {
-		panic(fmt.Errorf("Failed to write to packet, invalid size!"))
+		return 0, fmt.Errorf("Failed to write to packet, invalid size!")
 	}
+
+	return len(data), nil
 }
 
 func (pkt *Packet) writeByte(data byte) {
 	pkt.Write([]byte{data})
 }
 
-func (pkt *Packet) readRaw(sz int) []byte {
-	data := pkt.Buf[:sz]
+func (pkt *Packet) readRaw(data []byte) (int, error) {
+	sz := copy(data, pkt.Buf)
 	pkt.Buf = pkt.Buf[sz:]
-	pkt.cursor += sz
-	return data
-}
 
-func (pkt *Packet) Read(sz int) []byte {
-	if sz > len(pkt.Buf) {
-		panic(fmt.Errorf("Failed to read from packet, invalid size!"))
+	if sz != len(data) {
+		return sz, io.EOF
 	}
 
-	return pkt.readRaw(sz)
+	return sz, nil
+}
+
+func (pkt *Packet) Read(data []byte) (int, error) {
+	if len(data) > len(pkt.Buf) {
+		return 0, fmt.Errorf("Failed to read from packet, invalid size!")
+	}
+
+	return pkt.readRaw(data)
 }
 
 func (pkt *Packet) readByte() byte {
-	return pkt.Read(1)[0]
+	data := pkt.Buf[0]
+	pkt.Buf = pkt.Buf[1:]
+	return data
 }
 
 func (pkt *Packet) encodeStructField(field reflect.StructField, value reflect.Value) {
-	// log.Printf("Encoding '%s', current cursor: %d", field.Name, len(pkt.Buf))
+	log.Printf("Encoding '%s'", field.Name)
 
 	switch field.Type.Kind() {
 	case reflect.String: // all strings in fusionfall packets are encoded as utf16, we'll need to encode it
@@ -79,22 +81,21 @@ func (pkt *Packet) encodeStructField(field reflect.StructField, value reflect.Va
 			panic(fmt.Errorf("Failed to grab string 'size' tag!!"))
 		}
 
-		sz *= 2
 		buf16 := utf16.Encode([]rune(value.String()))
-		buf := *(*[]byte)(unsafe.Pointer(&buf16))
 
-		// len(buf) needs to be the same size as sz
-		if len(buf) > sz {
+		// len(buf16) needs to be the same size as sz
+		if len(buf16) > sz {
 			// truncate
-			buf = buf[:sz]
+			buf16 = buf16[:sz]
 		} else {
 			// grow
-			for len(buf) < sz {
-				buf = append(buf, 0)
+			for len(buf16) < sz {
+				buf16 = append(buf16, 0)
 			}
 		}
 
-		pkt.Write(buf)
+		// write
+		binary.Write(pkt, pkt.ByteOrder, buf16)
 	default:
 		pkt.Encode(value.Addr().Interface())
 	}
@@ -118,48 +119,14 @@ func (pkt *Packet) Encode(data interface{}) {
 		for i := 0; i < sz; i++ {
 			pkt.encodeStructField(rv.Type().Field(i), rv.Field(i))
 		}
-	case reflect.Array:
-		sz := rv.Len()
-
-		// encode data
-		for i := 0; i < sz; i++ {
-			elem := rv.Index(i)
-			pkt.Encode(elem.Addr().Interface())
-		}
-	case reflect.Uint8:
-		pkt.writeByte(byte(rv.Uint()))
-	case reflect.Uint16:
-		tmp := make([]byte, 2)
-		pkt.ByteOrder.PutUint16(tmp, uint16(rv.Uint()))
-		pkt.Write(tmp)
-	case reflect.Uint32:
-		tmp := make([]byte, 4)
-		pkt.ByteOrder.PutUint32(tmp, uint32(rv.Uint()))
-		pkt.Write(tmp)
-	case reflect.Uint64:
-		tmp := make([]byte, 8)
-		pkt.ByteOrder.PutUint64(tmp, uint64(rv.Uint()))
-		pkt.Write(tmp)
-	// im using the PutUintX() api here because it's functionally the same and apparently PutIntX doesn't exist?
-	case reflect.Int8:
-		pkt.writeByte(byte(rv.Int()))
-	case reflect.Int16:
-		tmp := make([]byte, 2)
-		pkt.ByteOrder.PutUint16(tmp, uint16(rv.Int()))
-		pkt.Write(tmp)
-	case reflect.Int32:
-		tmp := make([]byte, 4)
-		pkt.ByteOrder.PutUint32(tmp, uint32(rv.Int()))
-		pkt.Write(tmp)
-	case reflect.Int64:
-		tmp := make([]byte, 8)
-		pkt.ByteOrder.PutUint64(tmp, uint64(rv.Int()))
-		pkt.Write(tmp)
+	default:
+		// we pass everything else to go's binary package
+		binary.Write(pkt, pkt.ByteOrder, data)
 	}
 }
 
 func (pkt *Packet) decodeStructField(field reflect.StructField, value reflect.Value) {
-	// log.Printf("Decoding '%s', current cursor: %d", field.Name, pkt.cursor)
+	log.Printf("Decoding '%s'", field.Name)
 
 	switch field.Type.Kind() {
 	case reflect.String: // all strings in fusionfall packets are encoded as utf16, we'll need to decode it
@@ -168,12 +135,8 @@ func (pkt *Packet) decodeStructField(field reflect.StructField, value reflect.Va
 			panic(fmt.Errorf("Failed to grab string 'size' tag!!"))
 		}
 
-		// sz * sizeof(char16_t)
-		sz *= 2
-		buf := make([]byte, 0, sz)
-		buf = append(buf, pkt.Read(sz)...)
-
-		buf16 := *(*[]uint16)(unsafe.Pointer(&buf))
+		buf16 := make([]uint16, sz)
+		binary.Read(pkt, pkt.ByteOrder, buf16)
 
 		// find null terminator
 		var realSize int
@@ -183,8 +146,7 @@ func (pkt *Packet) decodeStructField(field reflect.StructField, value reflect.Va
 			}
 		}
 
-		str := string(utf16.Decode(buf16[:realSize]))
-		value.SetString(str)
+		value.SetString(string(utf16.Decode(buf16[:realSize])))
 	default:
 		pkt.Decode(value.Addr().Interface())
 	}
@@ -208,29 +170,7 @@ func (pkt *Packet) Decode(data interface{}) {
 		for i := 0; i < sz; i++ {
 			pkt.decodeStructField(rv.Type().Field(i), rv.Field(i))
 		}
-	case reflect.Array:
-		sz := rv.Len()
-
-		// decode data
-		for i := 0; i < sz; i++ {
-			elem := rv.Index(i)
-			pkt.Decode(elem.Addr().Interface())
-		}
-	case reflect.Uint8:
-		rv.SetUint(uint64(pkt.readByte()))
-	case reflect.Uint16:
-		rv.SetUint(uint64(pkt.ByteOrder.Uint16(pkt.Read(2))))
-	case reflect.Uint32:
-		rv.SetUint(uint64(pkt.ByteOrder.Uint32(pkt.Read(4))))
-	case reflect.Uint64:
-		rv.SetUint(pkt.ByteOrder.Uint64(pkt.Read(8)))
-	case reflect.Int8:
-		rv.SetInt(int64(pkt.readByte()))
-	case reflect.Int16:
-		rv.SetInt(int64(pkt.ByteOrder.Uint16(pkt.Read(2))))
-	case reflect.Int32:
-		rv.SetInt(int64(pkt.ByteOrder.Uint32(pkt.Read(4))))
-	case reflect.Int64:
-		rv.SetInt(int64(pkt.ByteOrder.Uint64(pkt.Read(8))))
+	default:
+		binary.Read(pkt, pkt.ByteOrder, data)
 	}
 }
