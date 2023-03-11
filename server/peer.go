@@ -3,11 +3,13 @@ package server
 import (
 	"encoding/binary"
 	"fmt"
+	"io"
 	"log"
 	"net"
 
 	"github.com/CPunch/gopenfusion/db"
 	"github.com/CPunch/gopenfusion/protocol"
+	"github.com/CPunch/gopenfusion/protocol/pool"
 )
 
 const (
@@ -48,32 +50,32 @@ func NewPeer(handler PeerHandler, conn net.Conn) *Peer {
 }
 
 func (client *Peer) Send(data interface{}, typeID uint32) {
+	buf := pool.Get()
+	defer func() { // always return the buffer to the pool
+		pool.Put(buf)
+	}()
+
 	// encode
-	pkt := protocol.NewPacket(make([]byte, 0))
+	pkt := protocol.NewPacket(buf)
+
+	// write the typeID and packet body
+	pkt.Encode(uint32(typeID))
 	pkt.Encode(data)
-	log.Printf("Sending %#v, sizeof: %d", data, len(pkt.Buf))
 
-	// write packet size
-	tmp := make([]byte, 4)
-	binary.LittleEndian.PutUint32(tmp, uint32(len(pkt.Buf)+4))
-	if _, err := client.conn.Write(tmp); err != nil {
-		panic(fmt.Errorf("[FATAL] failed to write packet size! %v", err))
-	}
-
-	// prepend the typeID to the packet body
-	binary.LittleEndian.PutUint32(tmp, uint32(typeID))
-	tmp = append(tmp, pkt.Buf...)
+	// write the packet size
+	binary.Write(client.conn, binary.LittleEndian, uint32(buf.Len()))
 
 	// encrypt typeID & body
 	switch client.whichKey {
 	case USE_E:
-		protocol.EncryptData(tmp, client.E_key)
+		protocol.EncryptData(buf.Bytes(), client.E_key)
 	case USE_FE:
-		protocol.EncryptData(tmp, client.FE_key)
+		protocol.EncryptData(buf.Bytes(), client.FE_key)
 	}
 
-	// write packet body
-	if _, err := client.conn.Write(tmp); err != nil {
+	// write packet type && packet body
+	log.Printf("Sending %#v, sizeof: %d", data, buf.Len())
+	if _, err := client.conn.Write(buf.Bytes()); err != nil {
 		panic(fmt.Errorf("[FATAL] failed to write packet body! %v", err))
 	}
 }
@@ -96,13 +98,12 @@ func (client *Peer) ClientHandler() {
 		client.Kill()
 	}()
 
-	tmp := make([]byte, 4, protocol.CN_PACKET_BUFFER_SIZE)
 	for {
 		// read packet size
-		if _, err := client.conn.Read(tmp); err != nil {
+		var sz uint32
+		if err := binary.Read(client.conn, binary.LittleEndian, &sz); err != nil {
 			panic(fmt.Errorf("[FATAL] failed to read packet size! %v", err))
 		}
-		sz := int(binary.LittleEndian.Uint32(tmp))
 
 		// client should never send a packet size outside of this range
 		if sz > protocol.CN_PACKET_BUFFER_SIZE || sz < 4 {
@@ -110,20 +111,26 @@ func (client *Peer) ClientHandler() {
 		}
 
 		// read packet body
-		if _, err := client.conn.Read(tmp[:sz]); err != nil {
+		buf := pool.Get()
+		if _, err := buf.ReadFrom(io.LimitReader(client.conn, int64(sz))); err != nil {
 			panic(fmt.Errorf("[FATAL] failed to read packet body! %v", err))
 		}
 
-		// decrypt && grab typeID
-		protocol.DecryptData(tmp[:sz], client.E_key)
-		typeID := uint32(binary.LittleEndian.Uint32(tmp[:4]))
+		fmt.Printf("%#v", buf)
+
+		// decrypt
+		protocol.DecryptData(buf.Bytes(), client.E_key)
+
+		// create packet && read typeID
+		var typeID uint32
+		pkt := protocol.NewPacket(buf)
+		pkt.Decode(&typeID)
 
 		// dispatch packet
 		log.Printf("Got packet ID: %x, with a sizeof: %d\n", typeID, sz)
-		pkt := protocol.NewPacket(tmp[4:sz])
 		client.handler.HandlePacket(client, typeID, pkt)
 
-		// reset tmp
-		tmp = tmp[:4]
+		// restore buffer to pool
+		pool.Put(buf)
 	}
 }

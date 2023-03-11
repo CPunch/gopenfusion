@@ -16,59 +16,14 @@ import (
 */
 
 type Packet struct {
-	ByteOrder binary.ByteOrder
-	Buf       []byte
+	readWriter io.ReadWriter
 }
 
-func NewPacket(buf []byte) *Packet {
+func NewPacket(readWriter io.ReadWriter) *Packet {
 	pkt := &Packet{
-		ByteOrder: binary.LittleEndian,
-		Buf:       buf,
+		readWriter: readWriter,
 	}
 	return pkt
-}
-
-func (pkt *Packet) writeRaw(data []byte) {
-	pkt.Buf = append(pkt.Buf, data...)
-}
-
-func (pkt *Packet) Write(data []byte) (int, error) {
-	pkt.writeRaw(data)
-
-	if len(pkt.Buf) > CN_PACKET_BUFFER_SIZE {
-		return 0, fmt.Errorf("Failed to write to packet, invalid size!")
-	}
-
-	return len(data), nil
-}
-
-func (pkt *Packet) writeByte(data byte) {
-	pkt.Write([]byte{data})
-}
-
-func (pkt *Packet) readRaw(data []byte) (int, error) {
-	sz := copy(data, pkt.Buf)
-	pkt.Buf = pkt.Buf[sz:]
-
-	if sz != len(data) {
-		return sz, io.EOF
-	}
-
-	return sz, nil
-}
-
-func (pkt *Packet) Read(data []byte) (int, error) {
-	if len(data) > len(pkt.Buf) {
-		return 0, fmt.Errorf("Failed to read from packet, invalid size!")
-	}
-
-	return pkt.readRaw(data)
-}
-
-func (pkt *Packet) readByte() byte {
-	data := pkt.Buf[0]
-	pkt.Buf = pkt.Buf[1:]
-	return data
 }
 
 func (pkt *Packet) encodeStructField(field reflect.StructField, value reflect.Value) {
@@ -89,13 +44,14 @@ func (pkt *Packet) encodeStructField(field reflect.StructField, value reflect.Va
 			buf16 = buf16[:sz]
 		} else {
 			// grow
+			// TODO: probably a better way to do this?
 			for len(buf16) < sz {
 				buf16 = append(buf16, 0)
 			}
 		}
 
 		// write
-		binary.Write(pkt, pkt.ByteOrder, buf16)
+		binary.Write(pkt.readWriter, binary.LittleEndian, buf16)
 	default:
 		pkt.Encode(value.Addr().Interface())
 	}
@@ -104,7 +60,7 @@ func (pkt *Packet) encodeStructField(field reflect.StructField, value reflect.Va
 	pad, err := strconv.Atoi(field.Tag.Get("pad"))
 	if err == nil {
 		for i := 0; i < pad; i++ {
-			pkt.writeByte(0)
+			pkt.readWriter.Write([]byte{0})
 		}
 	}
 }
@@ -121,7 +77,7 @@ func (pkt *Packet) Encode(data interface{}) {
 		}
 	default:
 		// we pass everything else to go's binary package
-		binary.Write(pkt, pkt.ByteOrder, data)
+		binary.Write(pkt.readWriter, binary.LittleEndian, data)
 	}
 }
 
@@ -136,7 +92,7 @@ func (pkt *Packet) decodeStructField(field reflect.StructField, value reflect.Va
 		}
 
 		buf16 := make([]uint16, sz)
-		binary.Read(pkt, pkt.ByteOrder, buf16)
+		binary.Read(pkt.readWriter, binary.LittleEndian, buf16)
 
 		// find null terminator
 		var realSize int
@@ -151,11 +107,11 @@ func (pkt *Packet) decodeStructField(field reflect.StructField, value reflect.Va
 		pkt.Decode(value.Addr().Interface())
 	}
 
-	// read padding bytes
+	// consume padding bytes
 	pad, err := strconv.Atoi(field.Tag.Get("pad"))
 	if err == nil {
 		for i := 0; i < pad; i++ {
-			pkt.readByte()
+			pkt.readWriter.Read([]byte{0})
 		}
 	}
 }
@@ -171,6 +127,6 @@ func (pkt *Packet) Decode(data interface{}) {
 			pkt.decodeStructField(rv.Type().Field(i), rv.Field(i))
 		}
 	default:
-		binary.Read(pkt, pkt.ByteOrder, data)
+		binary.Read(pkt.readWriter, binary.LittleEndian, data)
 	}
 }
