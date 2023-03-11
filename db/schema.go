@@ -17,11 +17,6 @@ type DBHandler struct {
 	db *sql.DB
 }
 
-type DBQuery interface {
-	Query(query string, args ...any) (*sql.Rows, error)
-	Exec(query string, args ...any) (sql.Result, error)
-}
-
 //go:embed migrations/new.sql
 var createDBQuery string
 
