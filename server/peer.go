@@ -18,7 +18,7 @@ const (
 )
 
 type PeerHandler interface {
-	HandlePacket(client *Peer, typeID uint32, pkt protocol.Packet)
+	HandlePacket(client *Peer, typeID uint32, pkt protocol.Packet) error
 	Connect(client *Peer)
 	Disconnect(client *Peer)
 }
@@ -49,7 +49,7 @@ func NewPeer(handler PeerHandler, conn net.Conn) *Peer {
 	}
 }
 
-func (client *Peer) Send(data interface{}, typeID uint32) {
+func (client *Peer) Send(data interface{}, typeID uint32) error {
 	buf := pool.Get()
 	defer func() { // always return the buffer to the pool
 		pool.Put(buf)
@@ -76,8 +76,10 @@ func (client *Peer) Send(data interface{}, typeID uint32) {
 	// write packet type && packet body
 	log.Printf("Sending %#v, sizeof: %d", data, buf.Len())
 	if _, err := client.conn.Write(buf.Bytes()); err != nil {
-		panic(fmt.Errorf("[FATAL] failed to write packet body! %v", err))
+		return fmt.Errorf("[FATAL] failed to write packet body! %v", err)
 	}
+
+	return nil
 }
 
 func (client *Peer) Kill() {
@@ -91,29 +93,27 @@ func (client *Peer) Kill() {
 }
 
 func (client *Peer) ClientHandler() {
-	defer func() {
-		if err := recover(); err != nil {
-			log.Printf("Client %p panic'd! %v", client, err)
-		}
-		client.Kill()
-	}()
+	defer client.Kill()
 
 	for {
 		// read packet size
 		var sz uint32
 		if err := binary.Read(client.conn, binary.LittleEndian, &sz); err != nil {
-			panic(fmt.Errorf("[FATAL] failed to read packet size! %v", err))
+			log.Printf("[FATAL] failed to read packet size! %v\n", err)
+			return
 		}
 
 		// client should never send a packet size outside of this range
 		if sz > protocol.CN_PACKET_BUFFER_SIZE || sz < 4 {
-			panic(fmt.Errorf("[FATAL] malicious packet size received! %d", sz))
+			log.Printf("[FATAL] malicious packet size received! %d", sz)
+			return
 		}
 
 		// read packet body
 		buf := pool.Get()
 		if _, err := buf.ReadFrom(io.LimitReader(client.conn, int64(sz))); err != nil {
-			panic(fmt.Errorf("[FATAL] failed to read packet body! %v", err))
+			log.Printf("[FATAL] failed to read packet body! %v", err)
+			return
 		}
 
 		// decrypt
@@ -122,11 +122,17 @@ func (client *Peer) ClientHandler() {
 		// create packet && read typeID
 		var typeID uint32
 		pkt := protocol.NewPacket(buf)
-		pkt.Decode(&typeID)
+		if err := pkt.Decode(&typeID); err != nil {
+			log.Printf("[FATAL] failed to read packet type! %v", err)
+			return
+		}
 
 		// dispatch packet
 		log.Printf("Got packet ID: %x, with a sizeof: %d\n", typeID, sz)
-		client.handler.HandlePacket(client, typeID, pkt)
+		if err := client.handler.HandlePacket(client, typeID, pkt); err != nil {
+			log.Printf("[FATAL] %v", err)
+			return
+		}
 
 		// restore buffer to pool
 		pool.Put(buf)
