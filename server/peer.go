@@ -119,32 +119,33 @@ func (peer *Peer) Handler() {
 		}
 
 		// grab buffer && read packet body
-		buf := pool.Get()
-		defer pool.Put(buf)
-		if _, err := buf.ReadFrom(io.LimitReader(peer.conn, int64(sz))); err != nil {
-			log.Printf("[FATAL] failed to read packet body! %v", err)
-			return
-		}
+		if err := func() error { // we wrap this in a closure so we can easily defer the buffer return to pool
+			buf := pool.Get()
+			defer pool.Put(buf)
+			if _, err := buf.ReadFrom(io.LimitReader(peer.conn, int64(sz))); err != nil {
+				return fmt.Errorf("failed to read packet body! %v", err)
+			}
 
-		// decrypt
-		protocol.DecryptData(buf.Bytes(), peer.E_key)
-		pkt := protocol.NewPacket(buf)
+			// decrypt
+			protocol.DecryptData(buf.Bytes(), peer.E_key)
+			pkt := protocol.NewPacket(buf)
 
-		// create packet && read typeID
-		var typeID uint32
-		if err := pkt.Decode(&typeID); err != nil {
-			log.Printf("[FATAL] failed to read packet type! %v", err)
-			return
-		}
+			// create packet && read typeID
+			var typeID uint32
+			if err := pkt.Decode(&typeID); err != nil {
+				return fmt.Errorf("failed to read packet type! %v", err)
+			}
 
-		// dispatch packet
-		log.Printf("Got packet ID: %x, with a sizeof: %d\n", typeID, sz)
-		if err := peer.handler.HandlePacket(peer, typeID, pkt); err != nil {
+			// dispatch packet
+			log.Printf("Got packet ID: %x, with a sizeof: %d\n", typeID, sz)
+			if err := peer.handler.HandlePacket(peer, typeID, pkt); err != nil {
+				return err
+			}
+
+			return nil
+		}(); err != nil {
 			log.Printf("[FATAL] %v", err)
 			return
 		}
-
-		// restore buffer to pool
-		pool.Put(buf)
 	}
 }
