@@ -53,7 +53,7 @@ func (pkt Packet) encodeStructField(field reflect.StructField, value reflect.Val
 			return err
 		}
 	default:
-		if err := pkt.Encode(value.Addr().Interface()); err != nil {
+		if err := pkt.Encode(value.Interface()); err != nil {
 			return err
 		}
 	}

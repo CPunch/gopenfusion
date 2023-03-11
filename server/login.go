@@ -26,7 +26,7 @@ const (
 func (server *LoginServer) AcceptLogin(peer *Peer, SzID string, IClientVerC int32, ISlotNum int8, data []protocol.SP_LS2CL_REP_CHAR_INFO) error {
 	peer.SzID = SzID
 
-	resp := &protocol.SP_LS2CL_REP_LOGIN_SUCC{
+	resp := protocol.SP_LS2CL_REP_LOGIN_SUCC{
 		SzID:          SzID,
 		ICharCount:    int8(len(data)),
 		ISlotNum:      ISlotNum,
@@ -66,7 +66,7 @@ func (server *LoginServer) Login(peer *Peer, pkt protocol.Packet) error {
 	pkt.Decode(&loginPkt)
 
 	SendError := func(e int32) {
-		peer.Send(protocol.P_LS2CL_REP_LOGIN_FAIL, &protocol.SP_LS2CL_REP_LOGIN_FAIL{
+		peer.Send(protocol.P_LS2CL_REP_LOGIN_FAIL, protocol.SP_LS2CL_REP_LOGIN_FAIL{
 			IErrorCode: e,
 			SzID:       loginPkt.SzID,
 		})
@@ -106,7 +106,7 @@ func (server *LoginServer) Login(peer *Peer, pkt protocol.Packet) error {
 	}
 
 	// build character list
-	charInfo := make([]protocol.SP_LS2CL_REP_CHAR_INFO, 0)
+	charInfo := make([]protocol.SP_LS2CL_REP_CHAR_INFO, 0, 4)
 	for _, plr := range plrs {
 		PCStyle, PCStyle2 := util.Player2PCStyle(&plr)
 		info := protocol.SP_LS2CL_REP_CHAR_INFO{
@@ -137,7 +137,7 @@ func (server *LoginServer) CheckCharacterName(peer *Peer, pkt protocol.Packet) e
 	pkt.Decode(&charPkt)
 
 	// just auto accept, client resends this data later
-	return peer.Send(protocol.P_LS2CL_REP_CHECK_CHAR_NAME_SUCC, &protocol.SP_LS2CL_REP_CHECK_CHAR_NAME_SUCC{
+	return peer.Send(protocol.P_LS2CL_REP_CHECK_CHAR_NAME_SUCC, protocol.SP_LS2CL_REP_CHECK_CHAR_NAME_SUCC{
 		SzFirstName: charPkt.SzFirstName,
 		SzLastName:  charPkt.SzLastName,
 	})
@@ -148,18 +148,18 @@ func (server *LoginServer) SaveCharacterName(peer *Peer, pkt protocol.Packet) er
 	pkt.Decode(&charPkt)
 
 	if peer.AccountID == -1 {
-		peer.Send(protocol.P_LS2CL_REP_SAVE_CHAR_NAME_FAIL, &protocol.SP_LS2CL_REP_SAVE_CHAR_NAME_FAIL{})
+		peer.Send(protocol.P_LS2CL_REP_SAVE_CHAR_NAME_FAIL, protocol.SP_LS2CL_REP_SAVE_CHAR_NAME_FAIL{})
 		return fmt.Errorf("Out of order P_LS2CL_REP_SAVE_CHAR_NAME_FAIL!")
 	}
 
 	// TODO: sanity check SzFirstName && SzLastName
 	PlayerID, err := db.DefaultDB.NewPlayer(peer.AccountID, charPkt.SzFirstName, charPkt.SzLastName, int(charPkt.ISlotNum))
 	if err != nil {
-		peer.Send(protocol.P_LS2CL_REP_SAVE_CHAR_NAME_FAIL, &protocol.SP_LS2CL_REP_SAVE_CHAR_NAME_FAIL{})
+		peer.Send(protocol.P_LS2CL_REP_SAVE_CHAR_NAME_FAIL, protocol.SP_LS2CL_REP_SAVE_CHAR_NAME_FAIL{})
 		return err
 	}
 
-	return peer.Send(protocol.P_LS2CL_REP_SAVE_CHAR_NAME_SUCC, &protocol.SP_LS2CL_REP_SAVE_CHAR_NAME_SUCC{
+	return peer.Send(protocol.P_LS2CL_REP_SAVE_CHAR_NAME_SUCC, protocol.SP_LS2CL_REP_SAVE_CHAR_NAME_SUCC{
 		IPC_UID:     int64(PlayerID),
 		ISlotNum:    charPkt.ISlotNum,
 		IGender:     charPkt.IGender,
@@ -195,7 +195,7 @@ func validateCharacterCreation(character *protocol.SP_CL2LS_REQ_CHAR_CREATE) boo
 }
 
 func SendFail(peer *Peer) error {
-	if err := peer.Send(protocol.P_LS2CL_REP_SHARD_SELECT_FAIL, &protocol.SP_LS2CL_REP_SHARD_SELECT_FAIL{
+	if err := peer.Send(protocol.P_LS2CL_REP_SHARD_SELECT_FAIL, protocol.SP_LS2CL_REP_SHARD_SELECT_FAIL{
 		IErrorCode: 2,
 	}); err != nil {
 		return err
@@ -222,7 +222,7 @@ func (server *LoginServer) CharacterCreate(peer *Peer, pkt protocol.Packet) erro
 	}
 
 	PCStyle, PCStyle2 := util.Player2PCStyle(plr)
-	return peer.Send(protocol.P_LS2CL_REP_CHAR_CREATE_SUCC, &protocol.SP_LS2CL_REP_CHAR_CREATE_SUCC{
+	return peer.Send(protocol.P_LS2CL_REP_CHAR_CREATE_SUCC, protocol.SP_LS2CL_REP_CHAR_CREATE_SUCC{
 		ILevel:     int16(plr.Level),
 		SPC_Style:  PCStyle,
 		SPC_Style2: PCStyle2,
@@ -239,7 +239,7 @@ func (server *LoginServer) CharacterDelete(peer *Peer, pkt protocol.Packet) erro
 		return SendFail(peer)
 	}
 
-	return peer.Send(protocol.P_LS2CL_REP_CHAR_DELETE_SUCC, &protocol.SP_LS2CL_REP_CHAR_DELETE_SUCC{
+	return peer.Send(protocol.P_LS2CL_REP_CHAR_DELETE_SUCC, protocol.SP_LS2CL_REP_CHAR_DELETE_SUCC{
 		ISlotNum: int8(slot),
 	})
 }
