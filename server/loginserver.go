@@ -63,7 +63,7 @@ func (server *LoginServer) Start() {
 
 		client := NewPeer(server, conn)
 		server.Connect(client)
-		go client.ClientHandler()
+		go client.Handler()
 	}
 }
 

@@ -49,56 +49,64 @@ func NewPeer(handler PeerHandler, conn net.Conn) *Peer {
 	}
 }
 
-func (client *Peer) Send(data interface{}, typeID uint32) error {
+func (peer *Peer) Send(typeID uint32, data ...interface{}) error {
 	buf := pool.Get()
-	defer func() { // always return the buffer to the pool
-		pool.Put(buf)
-	}()
+	defer pool.Put(buf) // always return the buffer to the pool
 
-	// encode
+	// body start
 	pkt := protocol.NewPacket(buf)
 
-	// write the typeID and packet body
-	pkt.Encode(uint32(typeID))
-	pkt.Encode(data)
-
-	// write the packet size
-	binary.Write(client.conn, binary.LittleEndian, uint32(buf.Len()))
-
-	// encrypt typeID & body
-	switch client.whichKey {
-	case USE_E:
-		protocol.EncryptData(buf.Bytes(), client.E_key)
-	case USE_FE:
-		protocol.EncryptData(buf.Bytes(), client.FE_key)
+	// encode type id
+	if err := pkt.Encode(uint32(typeID)); err != nil {
+		return err
 	}
 
-	// write packet type && packet body
+	// encode data
+	for _, trailer := range data {
+		if err := pkt.Encode(trailer); err != nil {
+			return err
+		}
+	}
+
+	// encrypt body
+	switch peer.whichKey {
+	case USE_E:
+		protocol.EncryptData(buf.Bytes(), peer.E_key)
+	case USE_FE:
+		protocol.EncryptData(buf.Bytes(), peer.FE_key)
+	}
+
+	// write packet size
+	if err := binary.Write(peer.conn, binary.LittleEndian, uint32(buf.Len())); err != nil {
+		return err
+	}
+
+	// write packet body
 	log.Printf("Sending %#v, sizeof: %d", data, buf.Len())
-	if _, err := client.conn.Write(buf.Bytes()); err != nil {
+	if _, err := peer.conn.Write(buf.Bytes()); err != nil {
 		return fmt.Errorf("[FATAL] failed to write packet body! %v", err)
 	}
 
 	return nil
 }
 
-func (client *Peer) Kill() {
-	if !client.alive {
+func (peer *Peer) Kill() {
+	if !peer.alive {
 		return
 	}
 
-	client.alive = false
-	client.conn.Close()
-	client.handler.Disconnect(client)
+	peer.alive = false
+	peer.conn.Close()
+	peer.handler.Disconnect(peer)
 }
 
-func (client *Peer) ClientHandler() {
-	defer client.Kill()
+func (peer *Peer) Handler() {
+	defer peer.Kill()
 
 	for {
-		// read packet size
+		// read packet size, the goroutine spends most of it's time parked here
 		var sz uint32
-		if err := binary.Read(client.conn, binary.LittleEndian, &sz); err != nil {
+		if err := binary.Read(peer.conn, binary.LittleEndian, &sz); err != nil {
 			log.Printf("[FATAL] failed to read packet size! %v\n", err)
 			return
 		}
@@ -111,17 +119,17 @@ func (client *Peer) ClientHandler() {
 
 		// read packet body
 		buf := pool.Get()
-		if _, err := buf.ReadFrom(io.LimitReader(client.conn, int64(sz))); err != nil {
+		if _, err := buf.ReadFrom(io.LimitReader(peer.conn, int64(sz))); err != nil {
 			log.Printf("[FATAL] failed to read packet body! %v", err)
 			return
 		}
 
 		// decrypt
-		protocol.DecryptData(buf.Bytes(), client.E_key)
+		protocol.DecryptData(buf.Bytes(), peer.E_key)
+		pkt := protocol.NewPacket(buf)
 
 		// create packet && read typeID
 		var typeID uint32
-		pkt := protocol.NewPacket(buf)
 		if err := pkt.Decode(&typeID); err != nil {
 			log.Printf("[FATAL] failed to read packet type! %v", err)
 			return
@@ -129,7 +137,7 @@ func (client *Peer) ClientHandler() {
 
 		// dispatch packet
 		log.Printf("Got packet ID: %x, with a sizeof: %d\n", typeID, sz)
-		if err := client.handler.HandlePacket(client, typeID, pkt); err != nil {
+		if err := peer.handler.HandlePacket(peer, typeID, pkt); err != nil {
 			log.Printf("[FATAL] %v", err)
 			return
 		}
