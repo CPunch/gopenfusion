@@ -105,9 +105,14 @@ func (server *LoginServer) Login(peer *Peer, pkt protocol.Packet) error {
 		return err
 	}
 
+	// truncate plrs
+	if len(plrs) > 3 {
+		plrs = plrs[:4]
+	}
+
 	// build character list
-	charInfo := make([]protocol.SP_LS2CL_REP_CHAR_INFO, 0, 4)
-	for _, plr := range plrs {
+	charInfo := [4]protocol.SP_LS2CL_REP_CHAR_INFO{}
+	for i, plr := range plrs {
 		PCStyle, PCStyle2 := util.Player2PCStyle(&plr)
 		info := protocol.SP_LS2CL_REP_CHAR_INFO{
 			ISlot:      int8(plr.Slot),
@@ -126,10 +131,10 @@ func (server *LoginServer) Login(peer *Peer, pkt protocol.Packet) error {
 		}
 
 		copy(info.AEquip[:], AEquip)
-		charInfo = append(charInfo, info)
+		charInfo[i] = info
 	}
 
-	return server.AcceptLogin(peer, loginPkt.SzID, loginPkt.IClientVerC, 1, charInfo)
+	return server.AcceptLogin(peer, loginPkt.SzID, loginPkt.IClientVerC, 1, charInfo[:len(plrs)])
 }
 
 func (server *LoginServer) CheckCharacterName(peer *Peer, pkt protocol.Packet) error {
@@ -191,6 +196,7 @@ func validateCharacterCreation(character *protocol.SP_CL2LS_REQ_CHAR_CREATE) boo
 		return false
 	}
 
+	// TODO: sanity check items in SOn_Item; see db.FinishPlayer()
 	return true
 }
 

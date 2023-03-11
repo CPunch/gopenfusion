@@ -5,7 +5,7 @@ import (
 	"sync"
 )
 
-var allocator = sync.Pool{
+var allocator = &sync.Pool{
 	New: func() any { return new(bytes.Buffer) },
 }
 

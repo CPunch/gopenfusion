@@ -24,15 +24,15 @@ type PeerHandler interface {
 }
 
 type Peer struct {
+	Player    *db.Player
+	conn      net.Conn
+	handler   PeerHandler
+	SzID      string
 	E_key     []byte
 	FE_key    []byte
-	SzID      string
 	AccountID int
-	Player    *db.Player
-	handler   PeerHandler
-	conn      net.Conn
-	alive     bool
 	whichKey  int
+	alive     bool
 }
 
 func NewPeer(handler PeerHandler, conn net.Conn) *Peer {
@@ -50,14 +50,15 @@ func NewPeer(handler PeerHandler, conn net.Conn) *Peer {
 }
 
 func (peer *Peer) Send(typeID uint32, data ...interface{}) error {
+	// grab buffer from pool
 	buf := pool.Get()
-	defer pool.Put(buf) // always return the buffer to the pool
+	defer pool.Put(buf)
 
 	// body start
 	pkt := protocol.NewPacket(buf)
 
 	// encode type id
-	if err := pkt.Encode(uint32(typeID)); err != nil {
+	if err := pkt.Encode(typeID); err != nil {
 		return err
 	}
 
@@ -117,8 +118,9 @@ func (peer *Peer) Handler() {
 			return
 		}
 
-		// read packet body
+		// grab buffer && read packet body
 		buf := pool.Get()
+		defer pool.Put(buf)
 		if _, err := buf.ReadFrom(io.LimitReader(peer.conn, int64(sz))); err != nil {
 			log.Printf("[FATAL] failed to read packet body! %v", err)
 			return
