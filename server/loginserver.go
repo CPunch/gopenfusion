@@ -17,6 +17,8 @@ type LoginServer struct {
 	peersLock      sync.Mutex
 }
 
+func stubbedPacket(_ *Peer, _ protocol.Packet) error { /* stubbed */ return nil }
+
 func NewLoginServer() *LoginServer {
 	listener, err := net.Listen("tcp", ":23000")
 	if err != nil {
@@ -24,25 +26,26 @@ func NewLoginServer() *LoginServer {
 	}
 
 	loginServer := &LoginServer{
-		listener:       listener,
-		packetHandlers: make(map[uint32]PacketHandler),
-		peers:          make(map[*Peer]bool),
+		listener: listener,
+		peers:    make(map[*Peer]bool),
 	}
 
-	loginServer.RegisterPacketHandler(protocol.P_CL2LS_REQ_LOGIN, loginServer.Login)
-	loginServer.RegisterPacketHandler(protocol.P_CL2LS_REQ_CHECK_CHAR_NAME, loginServer.CheckCharacterName)
-	loginServer.RegisterPacketHandler(protocol.P_CL2LS_REQ_SAVE_CHAR_NAME, loginServer.SaveCharacterName)
-	loginServer.RegisterPacketHandler(protocol.P_CL2LS_REQ_CHAR_CREATE, loginServer.CharacterCreate)
-	// loginServer.RegisterPacketHandler(protocol.P_CL2LS_REQ_CHAR_SELECT, func(_ *Peer, _ protocol.Packet) error { /* stubbed */ return nil })
-	loginServer.RegisterPacketHandler(protocol.P_CL2LS_REQ_CHAR_DELETE, loginServer.CharacterDelete)
-	// loginServer.RegisterPacketHandler(protocol.P_CL2LS_REQ_SHARD_SELECT, func(_ *Peer, _ protocol.Packet) error { /* stubbed */ return nil })
-	// loginServer.RegisterPacketHandler(protocol.P_CL2LS_REQ_SHARD_LIST_INFO, func(_ *Peer, _ protocol.Packet) error { /* stubbed */ return nil })
-	// loginServer.RegisterPacketHandler(protocol.P_CL2LS_CHECK_NAME_LIST, func(_ *Peer, _ protocol.Packet) error { /* stubbed */ return nil })
-	loginServer.RegisterPacketHandler(protocol.P_CL2LS_REQ_SAVE_CHAR_TUTOR, loginServer.FinishTutorial)
-	// loginServer.RegisterPacketHandler(protocol.P_CL2LS_REQ_PC_EXIT_DUPLICATE, func(_ *Peer, _ protocol.Packet) error { /* stubbed */ return nil })
-	// loginServer.RegisterPacketHandler(protocol.P_CL2LS_REP_LIVE_CHECK, func(_ *Peer, _ protocol.Packet) error { /* stubbed */ return nil })
-	// loginServer.RegisterPacketHandler(protocol.P_CL2LS_REQ_CHANGE_CHAR_NAME, func(_ *Peer, _ protocol.Packet) error { /* stubbed */ return nil })
-	// loginServer.RegisterPacketHandler(protocol.P_CL2LS_REQ_SERVER_SELECT, func(_ *Peer, _ protocol.Packet) error { /* stubbed */ return nil })
+	loginServer.packetHandlers = map[uint32]PacketHandler{
+		protocol.P_CL2LS_REQ_LOGIN:             loginServer.Login,
+		protocol.P_CL2LS_REQ_CHECK_CHAR_NAME:   loginServer.CheckCharacterName,
+		protocol.P_CL2LS_REQ_SAVE_CHAR_NAME:    loginServer.SaveCharacterName,
+		protocol.P_CL2LS_REQ_CHAR_CREATE:       loginServer.CharacterCreate,
+		protocol.P_CL2LS_REQ_CHAR_SELECT:       stubbedPacket,
+		protocol.P_CL2LS_REQ_CHAR_DELETE:       loginServer.CharacterDelete,
+		protocol.P_CL2LS_REQ_SHARD_SELECT:      stubbedPacket,
+		protocol.P_CL2LS_REQ_SHARD_LIST_INFO:   stubbedPacket,
+		protocol.P_CL2LS_CHECK_NAME_LIST:       stubbedPacket,
+		protocol.P_CL2LS_REQ_SAVE_CHAR_TUTOR:   loginServer.FinishTutorial,
+		protocol.P_CL2LS_REQ_PC_EXIT_DUPLICATE: stubbedPacket,
+		protocol.P_CL2LS_REP_LIVE_CHECK:        stubbedPacket,
+		protocol.P_CL2LS_REQ_CHANGE_CHAR_NAME:  stubbedPacket,
+		protocol.P_CL2LS_REQ_SERVER_SELECT:     stubbedPacket,
+	}
 
 	return loginServer
 }
@@ -73,7 +76,7 @@ func (server *LoginServer) HandlePacket(peer *Peer, typeID uint32, pkt protocol.
 			return err
 		}
 	} else {
-		log.Printf("[WARN] unsupported packet ID: %x\n", typeID)
+		log.Printf("[WARN] invalid packet ID: %x\n", typeID)
 	}
 
 	return nil
