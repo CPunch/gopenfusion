@@ -4,7 +4,6 @@ import (
 	"encoding/binary"
 	"fmt"
 	"io"
-	"log"
 	"reflect"
 	"strconv"
 	"unicode/utf16"
@@ -25,14 +24,14 @@ func NewPacket(readWriter io.ReadWriter) Packet {
 	}
 }
 
-func (pkt Packet) encodeStructField(field reflect.StructField, value reflect.Value) {
-	log.Printf("Encoding '%s'", field.Name)
+func (pkt Packet) encodeStructField(field reflect.StructField, value reflect.Value) error {
+	// log.Printf("Encoding '%s'", field.Name)
 
 	switch field.Type.Kind() {
 	case reflect.String: // all strings in fusionfall packets are encoded as utf16, we'll need to encode it
 		sz, err := strconv.Atoi(field.Tag.Get("size"))
 		if err != nil {
-			panic(fmt.Errorf("Failed to grab string 'size' tag!!"))
+			return fmt.Errorf("Failed to grab string 'size' tag!!")
 		}
 
 		buf16 := utf16.Encode([]rune(value.String()))
@@ -50,21 +49,29 @@ func (pkt Packet) encodeStructField(field reflect.StructField, value reflect.Val
 		}
 
 		// write
-		binary.Write(pkt.readWriter, binary.LittleEndian, buf16)
+		if err := binary.Write(pkt.readWriter, binary.LittleEndian, buf16); err != nil {
+			return err
+		}
 	default:
-		pkt.Encode(value.Addr().Interface())
+		if err := pkt.Encode(value.Addr().Interface()); err != nil {
+			return err
+		}
 	}
 
 	// write padding bytes
 	pad, err := strconv.Atoi(field.Tag.Get("pad"))
 	if err == nil {
 		for i := 0; i < pad; i++ {
-			pkt.readWriter.Write([]byte{0})
+			if _, err := pkt.readWriter.Write([]byte{0}); err != nil {
+				return err
+			}
 		}
 	}
+
+	return nil
 }
 
-func (pkt Packet) Encode(data interface{}) {
+func (pkt Packet) Encode(data interface{}) error {
 	rv := reflect.Indirect(reflect.ValueOf(data))
 
 	switch rv.Kind() {
@@ -72,26 +79,34 @@ func (pkt Packet) Encode(data interface{}) {
 		// walk through each struct fields
 		sz := rv.NumField()
 		for i := 0; i < sz; i++ {
-			pkt.encodeStructField(rv.Type().Field(i), rv.Field(i))
+			if err := pkt.encodeStructField(rv.Type().Field(i), rv.Field(i)); err != nil {
+				return err
+			}
 		}
 	default:
 		// we pass everything else to go's binary package
-		binary.Write(pkt.readWriter, binary.LittleEndian, data)
+		if err := binary.Write(pkt.readWriter, binary.LittleEndian, data); err != nil {
+			return err
+		}
 	}
+
+	return nil
 }
 
-func (pkt Packet) decodeStructField(field reflect.StructField, value reflect.Value) {
-	log.Printf("Decoding '%s'", field.Name)
+func (pkt Packet) decodeStructField(field reflect.StructField, value reflect.Value) error {
+	// log.Printf("Decoding '%s'", field.Name)
 
 	switch field.Type.Kind() {
 	case reflect.String: // all strings in fusionfall packets are encoded as utf16, we'll need to decode it
 		sz, err := strconv.Atoi(field.Tag.Get("size"))
 		if err != nil {
-			panic(fmt.Errorf("Failed to grab string 'size' tag!!"))
+			return fmt.Errorf("Failed to grab string 'size' tag!!")
 		}
 
 		buf16 := make([]uint16, sz)
-		binary.Read(pkt.readWriter, binary.LittleEndian, buf16)
+		if err := binary.Read(pkt.readWriter, binary.LittleEndian, buf16); err != nil {
+			return err
+		}
 
 		// find null terminator
 		var realSize int
@@ -103,19 +118,25 @@ func (pkt Packet) decodeStructField(field reflect.StructField, value reflect.Val
 
 		value.SetString(string(utf16.Decode(buf16[:realSize])))
 	default:
-		pkt.Decode(value.Addr().Interface())
+		if err := pkt.Decode(value.Addr().Interface()); err != nil {
+			return err
+		}
 	}
 
 	// consume padding bytes
 	pad, err := strconv.Atoi(field.Tag.Get("pad"))
 	if err == nil {
 		for i := 0; i < pad; i++ {
-			pkt.readWriter.Read([]byte{0})
+			if _, err := pkt.readWriter.Read([]byte{0}); err != nil {
+				return err
+			}
 		}
 	}
+
+	return nil
 }
 
-func (pkt Packet) Decode(data interface{}) {
+func (pkt Packet) Decode(data interface{}) error {
 	rv := reflect.Indirect(reflect.ValueOf(data))
 
 	switch rv.Kind() {
@@ -123,9 +144,15 @@ func (pkt Packet) Decode(data interface{}) {
 		// walk through each struct fields
 		sz := rv.NumField()
 		for i := 0; i < sz; i++ {
-			pkt.decodeStructField(rv.Type().Field(i), rv.Field(i))
+			if err := pkt.decodeStructField(rv.Type().Field(i), rv.Field(i)); err != nil {
+				return err
+			}
 		}
 	default:
-		binary.Read(pkt.readWriter, binary.LittleEndian, data)
+		if err := binary.Read(pkt.readWriter, binary.LittleEndian, data); err != nil {
+			return err
+		}
 	}
+
+	return nil
 }

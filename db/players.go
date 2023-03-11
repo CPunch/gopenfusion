@@ -178,7 +178,7 @@ func (db *DBHandler) GetPlayer(PlayerID int) (*Player, error) {
 			&plr.SkywayLocationFlag, &plr.CurrentMissionID, &plr.FirstUseFlag,
 			&plr.Body, &plr.EyeColor, &plr.FaceStyle, &plr.Gender, &plr.HairColor, &plr.HairStyle,
 			&plr.Height, &plr.SkinColor); err != nil {
-			panic(err)
+			return nil, err
 		}
 	}
 
