@@ -42,7 +42,7 @@ func (server *LoginServer) Start() {
 	}
 }
 
-func (server *LoginServer) HandlePacket(peer *Peer, typeID uint32, pkt *protocol.Packet) {
+func (server *LoginServer) HandlePacket(peer *Peer, typeID uint32, pkt protocol.Packet) {
 	switch typeID {
 	case protocol.P_CL2LS_REQ_LOGIN:
 		server.Login(peer, pkt)

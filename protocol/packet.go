@@ -19,14 +19,13 @@ type Packet struct {
 	readWriter io.ReadWriter
 }
 
-func NewPacket(readWriter io.ReadWriter) *Packet {
-	pkt := &Packet{
+func NewPacket(readWriter io.ReadWriter) Packet {
+	return Packet{
 		readWriter: readWriter,
 	}
-	return pkt
 }
 
-func (pkt *Packet) encodeStructField(field reflect.StructField, value reflect.Value) {
+func (pkt Packet) encodeStructField(field reflect.StructField, value reflect.Value) {
 	log.Printf("Encoding '%s'", field.Name)
 
 	switch field.Type.Kind() {
@@ -65,7 +64,7 @@ func (pkt *Packet) encodeStructField(field reflect.StructField, value reflect.Va
 	}
 }
 
-func (pkt *Packet) Encode(data interface{}) {
+func (pkt Packet) Encode(data interface{}) {
 	rv := reflect.Indirect(reflect.ValueOf(data))
 
 	switch rv.Kind() {
@@ -81,7 +80,7 @@ func (pkt *Packet) Encode(data interface{}) {
 	}
 }
 
-func (pkt *Packet) decodeStructField(field reflect.StructField, value reflect.Value) {
+func (pkt Packet) decodeStructField(field reflect.StructField, value reflect.Value) {
 	log.Printf("Decoding '%s'", field.Name)
 
 	switch field.Type.Kind() {
@@ -116,7 +115,7 @@ func (pkt *Packet) decodeStructField(field reflect.StructField, value reflect.Va
 	}
 }
 
-func (pkt *Packet) Decode(data interface{}) {
+func (pkt Packet) Decode(data interface{}) {
 	rv := reflect.Indirect(reflect.ValueOf(data))
 
 	switch rv.Kind() {

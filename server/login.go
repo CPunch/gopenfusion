@@ -54,7 +54,7 @@ func (server *LoginServer) AcceptLogin(peer *Peer, SzID string, IClientVerC int3
 	}
 }
 
-func (server *LoginServer) Login(peer *Peer, pkt *protocol.Packet) {
+func (server *LoginServer) Login(peer *Peer, pkt protocol.Packet) {
 	var loginPkt protocol.SP_CL2LS_REQ_LOGIN
 	pkt.Decode(&loginPkt)
 
@@ -125,7 +125,7 @@ func (server *LoginServer) Login(peer *Peer, pkt *protocol.Packet) {
 	server.AcceptLogin(peer, loginPkt.SzID, loginPkt.IClientVerC, 1, charInfo)
 }
 
-func (server *LoginServer) CheckCharacterName(peer *Peer, pkt *protocol.Packet) {
+func (server *LoginServer) CheckCharacterName(peer *Peer, pkt protocol.Packet) {
 	var charPkt protocol.SP_CL2LS_REQ_CHECK_CHAR_NAME
 	pkt.Decode(&charPkt)
 
@@ -136,7 +136,7 @@ func (server *LoginServer) CheckCharacterName(peer *Peer, pkt *protocol.Packet) 
 	}, protocol.P_LS2CL_REP_CHECK_CHAR_NAME_SUCC)
 }
 
-func (server *LoginServer) SaveCharacterName(peer *Peer, pkt *protocol.Packet) {
+func (server *LoginServer) SaveCharacterName(peer *Peer, pkt protocol.Packet) {
 	var charPkt protocol.SP_CL2LS_REQ_SAVE_CHAR_NAME
 	pkt.Decode(&charPkt)
 
@@ -187,7 +187,7 @@ func validateCharacterCreation(character *protocol.SP_CL2LS_REQ_CHAR_CREATE) boo
 	return true
 }
 
-func (server *LoginServer) CharacterCreate(peer *Peer, pkt *protocol.Packet) {
+func (server *LoginServer) CharacterCreate(peer *Peer, pkt protocol.Packet) {
 	var charPkt protocol.SP_CL2LS_REQ_CHAR_CREATE
 	pkt.Decode(&charPkt)
 
@@ -216,7 +216,7 @@ func (server *LoginServer) CharacterCreate(peer *Peer, pkt *protocol.Packet) {
 	}, protocol.P_LS2CL_REP_CHAR_CREATE_SUCC)
 }
 
-func (server *LoginServer) CharacterDelete(peer *Peer, pkt *protocol.Packet) {
+func (server *LoginServer) CharacterDelete(peer *Peer, pkt protocol.Packet) {
 	var charPkt protocol.SP_CL2LS_REQ_CHAR_DELETE
 	pkt.Decode(&charPkt)
 
@@ -231,7 +231,7 @@ func (server *LoginServer) CharacterDelete(peer *Peer, pkt *protocol.Packet) {
 	}, protocol.P_LS2CL_REP_CHAR_DELETE_SUCC)
 }
 
-func (server *LoginServer) FinishTutorial(peer *Peer, pkt *protocol.Packet) {
+func (server *LoginServer) FinishTutorial(peer *Peer, pkt protocol.Packet) {
 	var charPkt protocol.SP_CL2LS_REQ_SAVE_CHAR_TUTOR
 	pkt.Decode(&charPkt)
 

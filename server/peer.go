@@ -18,7 +18,7 @@ const (
 )
 
 type PeerHandler interface {
-	HandlePacket(client *Peer, typeID uint32, pkt *protocol.Packet)
+	HandlePacket(client *Peer, typeID uint32, pkt protocol.Packet)
 	Connect(client *Peer)
 	Disconnect(client *Peer)
 }
@@ -115,8 +115,6 @@ func (client *Peer) ClientHandler() {
 		if _, err := buf.ReadFrom(io.LimitReader(client.conn, int64(sz))); err != nil {
 			panic(fmt.Errorf("[FATAL] failed to read packet body! %v", err))
 		}
-
-		fmt.Printf("%#v", buf)
 
 		// decrypt
 		protocol.DecryptData(buf.Bytes(), client.E_key)
