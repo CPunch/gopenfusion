@@ -20,10 +20,6 @@ type DBHandler struct {
 //go:embed migrations/new.sql
 var createDBQuery string
 
-var (
-	DefaultDB *DBHandler
-)
-
 func OpenLiteDB(dbPath string) (*DBHandler, error) {
 	sqliteFmt := fmt.Sprintf("%s", dbPath)
 

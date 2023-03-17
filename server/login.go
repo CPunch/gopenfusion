@@ -79,10 +79,10 @@ func (server *LoginServer) Login(peer *Peer, pkt protocol.Packet) error {
 	}
 
 	// attempt login
-	account, err := db.DefaultDB.TryLogin(loginPkt.SzID, loginPkt.SzPassword)
+	account, err := server.dbHndlr.TryLogin(loginPkt.SzID, loginPkt.SzPassword)
 	if err == db.LoginErrorInvalidID {
 		// this is the default behavior, auto create the account if the ID isn't in use
-		account, err = db.DefaultDB.NewAccount(loginPkt.SzID, loginPkt.SzPassword)
+		account, err = server.dbHndlr.NewAccount(loginPkt.SzID, loginPkt.SzPassword)
 		if err != nil {
 			// respond with a dummy login error packet so the client doesn't get softlocked
 			SendError(LOGIN_DATABASE_ERROR)
@@ -99,7 +99,7 @@ func (server *LoginServer) Login(peer *Peer, pkt protocol.Packet) error {
 
 	// grab player data
 	peer.AccountID = account.AccountID
-	plrs, err := db.DefaultDB.GetPlayers(account.AccountID)
+	plrs, err := server.dbHndlr.GetPlayers(account.AccountID)
 	if err != nil {
 		SendError(LOGIN_DATABASE_ERROR)
 		return err
@@ -124,7 +124,7 @@ func (server *LoginServer) Login(peer *Peer, pkt protocol.Packet) error {
 			IZ:         int32(plr.ZCoordinate),
 		}
 
-		AEquip, err := db.DefaultDB.GetPlayerInventorySlots(plr.PlayerID, 0, config.AEQUIP_COUNT-1)
+		AEquip, err := server.dbHndlr.GetPlayerInventorySlots(plr.PlayerID, 0, config.AEQUIP_COUNT-1)
 		if err != nil {
 			SendError(LOGIN_DATABASE_ERROR)
 			return err
@@ -158,7 +158,7 @@ func (server *LoginServer) SaveCharacterName(peer *Peer, pkt protocol.Packet) er
 	}
 
 	// TODO: sanity check SzFirstName && SzLastName
-	PlayerID, err := db.DefaultDB.NewPlayer(peer.AccountID, charPkt.SzFirstName, charPkt.SzLastName, int(charPkt.ISlotNum))
+	PlayerID, err := server.dbHndlr.NewPlayer(peer.AccountID, charPkt.SzFirstName, charPkt.SzLastName, int(charPkt.ISlotNum))
 	if err != nil {
 		peer.Send(protocol.P_LS2CL_REP_SAVE_CHAR_NAME_FAIL, protocol.SP_LS2CL_REP_SAVE_CHAR_NAME_FAIL{})
 		return err
@@ -218,11 +218,11 @@ func (server *LoginServer) CharacterCreate(peer *Peer, pkt protocol.Packet) erro
 		return SendFail(peer)
 	}
 
-	if err := db.DefaultDB.FinishPlayer(&charPkt, peer.AccountID); err != nil {
+	if err := server.dbHndlr.FinishPlayer(&charPkt, peer.AccountID); err != nil {
 		return SendFail(peer)
 	}
 
-	plr, err := db.DefaultDB.GetPlayer(int(charPkt.PCStyle.IPC_UID))
+	plr, err := server.dbHndlr.GetPlayer(int(charPkt.PCStyle.IPC_UID))
 	if err != nil {
 		return SendFail(peer)
 	}
@@ -240,7 +240,7 @@ func (server *LoginServer) CharacterDelete(peer *Peer, pkt protocol.Packet) erro
 	var charPkt protocol.SP_CL2LS_REQ_CHAR_DELETE
 	pkt.Decode(&charPkt)
 
-	slot, err := db.DefaultDB.DeletePlayer(int(charPkt.IPC_UID), peer.AccountID)
+	slot, err := server.dbHndlr.DeletePlayer(int(charPkt.IPC_UID), peer.AccountID)
 	if err != nil {
 		return SendFail(peer)
 	}
@@ -250,11 +250,43 @@ func (server *LoginServer) CharacterDelete(peer *Peer, pkt protocol.Packet) erro
 	})
 }
 
+func (server *LoginServer) ShardSelect(peer *Peer, pkt protocol.Packet) error {
+	var selection protocol.SP_CL2LS_REQ_CHAR_SELECT
+	pkt.Decode(&selection)
+
+	if server.shard == nil {
+		return fmt.Errorf("LoginServer currently has no linked shard")
+	}
+
+	key, err := protocol.GenSerialKey()
+	if err != nil {
+		return err
+	}
+
+	// TODO: verify peer->AccountID and selection->IPC_UID are valid!!!!
+
+	resp := protocol.SP_LS2CL_REP_SHARD_SELECT_SUCC{
+		G_FE_ServerPort: int32(server.shard.port),
+		IEnterSerialKey: key,
+	}
+
+	// the rest of the bytes in G_FE_ServerIP will be zero'd, so there's no need to write the NULL byte
+	copy(resp.G_FE_ServerIP[:], []byte(config.SHARD_IP))
+
+	server.shard.QueueLogin(key, &LoginMetadata{
+		FEKey:     peer.FE_key,
+		Timestamp: time.Now(),
+		PlayerID:  int32(selection.IPC_UID),
+	})
+
+	return peer.Send(protocol.P_LS2CL_REP_SHARD_SELECT_SUCC, resp)
+}
+
 func (server *LoginServer) FinishTutorial(peer *Peer, pkt protocol.Packet) error {
 	var charPkt protocol.SP_CL2LS_REQ_SAVE_CHAR_TUTOR
 	pkt.Decode(&charPkt)
 
-	if err := db.DefaultDB.FinishTutorial(int(charPkt.IPC_UID), peer.AccountID); err != nil {
+	if err := server.dbHndlr.FinishTutorial(int(charPkt.IPC_UID), peer.AccountID); err != nil {
 		return SendFail(peer)
 	}
 

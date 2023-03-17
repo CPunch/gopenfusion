@@ -8,6 +8,10 @@ var (
 	AEQUIP_COUNT = 9
 	AINVEN_COUNT = 50
 	ABANK_COUNT  = 119
+
+	LOGIN_PORT = 23000
+	SHARD_PORT = 23001
+	SHARD_IP   = "127.0.0.1"
 )
 
 func GetMaxHP(level int) int {

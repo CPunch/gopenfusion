@@ -39,15 +39,14 @@ type Player struct {
 	SkywayLocationFlag []byte
 	FirstUseFlag       []byte
 	Quests             []byte
-	/* Appearance tbl */
-	Body      int `db:"Body"`
-	EyeColor  int `db:"EyeColor"`
-	FaceStyle int `db:"FaceStyle"`
-	Gender    int `db:"Gender"`
-	HairColor int `db:"HairColor"`
-	HairStyle int `db:"HairStyle"`
-	Height    int `db:"Height"`
-	SkinColor int `db:"SkinColor"`
+	Body               int /* Appearance tbl start */
+	EyeColor           int
+	FaceStyle          int
+	Gender             int
+	HairColor          int
+	HairStyle          int
+	Height             int
+	SkinColor          int /* Appearance tbl end */
 }
 
 // returns PlayerID, error

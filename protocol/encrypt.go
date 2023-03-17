@@ -1,6 +1,7 @@
 package protocol
 
 import (
+	"crypto/rand"
 	"encoding/binary"
 )
 
@@ -57,4 +58,14 @@ func CreateNewKey(uTime uint64, iv1, iv2 uint64) []byte {
 	buf := make([]byte, 8)
 	binary.LittleEndian.PutUint64(buf, uint64(key))
 	return buf
+}
+
+func GenSerialKey() (int64, error) {
+	tmp := [8]byte{}
+	if _, err := rand.Read(tmp[:]); err != nil {
+		return 0, err
+	}
+
+	// convert to uint64 && return
+	return int64(binary.LittleEndian.Uint64(tmp[:])), nil
 }

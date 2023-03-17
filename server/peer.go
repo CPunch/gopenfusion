@@ -7,7 +7,6 @@ import (
 	"log"
 	"net"
 
-	"github.com/CPunch/gopenfusion/db"
 	"github.com/CPunch/gopenfusion/protocol"
 	"github.com/CPunch/gopenfusion/protocol/pool"
 )
@@ -24,7 +23,6 @@ type PeerHandler interface {
 }
 
 type Peer struct {
-	Player    *db.Player
 	conn      net.Conn
 	handler   PeerHandler
 	SzID      string
@@ -37,15 +35,14 @@ type Peer struct {
 
 func NewPeer(handler PeerHandler, conn net.Conn) *Peer {
 	return &Peer{
+		conn:      conn,
+		handler:   handler,
+		SzID:      "",
 		E_key:     []byte(protocol.DEFAULT_KEY),
 		FE_key:    nil,
-		SzID:      "",
 		AccountID: -1,
-		Player:    nil,
-		handler:   handler,
-		conn:      conn,
-		alive:     true,
 		whichKey:  USE_E,
+		alive:     true,
 	}
 }
 
