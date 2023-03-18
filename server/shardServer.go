@@ -22,7 +22,7 @@ type ShardServer struct {
 	port               int
 	dbHndlr            *db.DBHandler
 	packetHandlers     map[uint32]PacketHandler
-	peers              sync.Map // [*Peer]*db.Player
+	peers              sync.Map // [*protocol.CNPeer]*db.Player
 	loginMetadataQueue sync.Map // [int64]*LoginMetadata w/ int64 = serialKey
 }
 
@@ -39,7 +39,9 @@ func NewShardServer(dbHndlr *db.DBHandler, port int) (*ShardServer, error) {
 		packetHandlers: make(map[uint32]PacketHandler),
 	}
 
-	server.packetHandlers = map[uint32]PacketHandler{}
+	server.packetHandlers = map[uint32]PacketHandler{
+		protocol.P_CL2FE_REQ_PC_ENTER: server.RequestEnter,
+	}
 
 	return server, nil
 }
@@ -58,13 +60,13 @@ func (server *ShardServer) Start() {
 			return
 		}
 
-		client := NewPeer(server, conn)
+		client := protocol.NewCNPeer(server, conn)
 		server.Connect(client)
 		go client.Handler()
 	}
 }
 
-func (server *ShardServer) HandlePacket(peer *Peer, typeID uint32, pkt protocol.Packet) error {
+func (server *ShardServer) HandlePacket(peer *protocol.CNPeer, typeID uint32, pkt protocol.Packet) error {
 	if hndlr, ok := server.packetHandlers[typeID]; ok {
 		if err := hndlr(peer, pkt); err != nil {
 			return err
@@ -76,24 +78,24 @@ func (server *ShardServer) HandlePacket(peer *Peer, typeID uint32, pkt protocol.
 	return nil
 }
 
-func (server *ShardServer) Disconnect(peer *Peer) {
+func (server *ShardServer) Disconnect(peer *protocol.CNPeer) {
 	log.Printf("Peer %p disconnected from SHARD\n", peer)
 	server.peers.Delete(peer)
 }
 
-func (server *ShardServer) Connect(peer *Peer) {
+func (server *ShardServer) Connect(peer *protocol.CNPeer) {
 	log.Printf("New peer %p connected to SHARD\n", peer)
 	server.peers.Store(peer, nil)
 }
 
-func (server *ShardServer) JoinPlayer(peer *Peer, player *db.Player) {
+func (server *ShardServer) JoinPlayer(peer *protocol.CNPeer, player *db.Player) {
 	server.peers.Store(peer, player)
 }
 
 // Simple wrapper for server.peers.Range, if f returns false the iteration is stopped.
-func (server *ShardServer) RangePeers(f func(peer *Peer, player *db.Player) bool) {
+func (server *ShardServer) RangePeers(f func(peer *protocol.CNPeer, player *db.Player) bool) {
 	server.peers.Range(func(key, value any) bool { // simple wrapper to cast the datatypes
-		peer, ok := key.(*Peer)
+		peer, ok := key.(*protocol.CNPeer)
 		if !ok { // this should never happen
 			panic(fmt.Errorf("ShardServer.peers has an invalid key: peers[%#v] = %#v", key, value))
 		}

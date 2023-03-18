@@ -15,7 +15,7 @@ type LoginServer struct {
 	port           int
 	dbHndlr        *db.DBHandler
 	packetHandlers map[uint32]PacketHandler
-	peers          map[*Peer]bool
+	peers          map[*protocol.CNPeer]bool
 	peersLock      sync.Mutex
 	shard          *ShardServer
 }
@@ -30,7 +30,7 @@ func NewLoginServer(dbHndlr *db.DBHandler, port int) (*LoginServer, error) {
 		listener: listener,
 		port:     port,
 		dbHndlr:  dbHndlr,
-		peers:    make(map[*Peer]bool),
+		peers:    make(map[*protocol.CNPeer]bool),
 	}
 
 	server.packetHandlers = map[uint32]PacketHandler{
@@ -63,13 +63,13 @@ func (server *LoginServer) Start() {
 			return
 		}
 
-		client := NewPeer(server, conn)
+		client := protocol.NewCNPeer(server, conn)
 		server.Connect(client)
 		go client.Handler()
 	}
 }
 
-func (server *LoginServer) HandlePacket(peer *Peer, typeID uint32, pkt protocol.Packet) error {
+func (server *LoginServer) HandlePacket(peer *protocol.CNPeer, typeID uint32, pkt protocol.Packet) error {
 	if hndlr, ok := server.packetHandlers[typeID]; ok {
 		if err := hndlr(peer, pkt); err != nil {
 			return err
@@ -81,14 +81,14 @@ func (server *LoginServer) HandlePacket(peer *Peer, typeID uint32, pkt protocol.
 	return nil
 }
 
-func (server *LoginServer) Disconnect(peer *Peer) {
+func (server *LoginServer) Disconnect(peer *protocol.CNPeer) {
 	server.peersLock.Lock()
 	log.Printf("Peer %p disconnected from LOGIN\n", peer)
 	delete(server.peers, peer)
 	server.peersLock.Unlock()
 }
 
-func (server *LoginServer) Connect(peer *Peer) {
+func (server *LoginServer) Connect(peer *protocol.CNPeer) {
 	server.peersLock.Lock()
 	log.Printf("New peer %p connected to LOGIN\n", peer)
 	server.peers[peer] = true

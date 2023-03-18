@@ -23,7 +23,7 @@ const (
 	LOGIN_UPDATED_EUALA_REQUIRED                = 9
 )
 
-func (server *LoginServer) AcceptLogin(peer *Peer, SzID string, IClientVerC int32, ISlotNum int8, data []protocol.SP_LS2CL_REP_CHAR_INFO) error {
+func (server *LoginServer) AcceptLogin(peer *protocol.CNPeer, SzID string, IClientVerC int32, ISlotNum int8, data []protocol.SP_LS2CL_REP_CHAR_INFO) error {
 	peer.SzID = SzID
 
 	resp := protocol.SP_LS2CL_REP_LOGIN_SUCC{
@@ -61,7 +61,7 @@ func (server *LoginServer) AcceptLogin(peer *Peer, SzID string, IClientVerC int3
 	return nil
 }
 
-func (server *LoginServer) Login(peer *Peer, pkt protocol.Packet) error {
+func (server *LoginServer) Login(peer *protocol.CNPeer, pkt protocol.Packet) error {
 	var loginPkt protocol.SP_CL2LS_REQ_LOGIN
 	pkt.Decode(&loginPkt)
 
@@ -137,7 +137,7 @@ func (server *LoginServer) Login(peer *Peer, pkt protocol.Packet) error {
 	return server.AcceptLogin(peer, loginPkt.SzID, loginPkt.IClientVerC, 1, charInfo[:len(plrs)])
 }
 
-func (server *LoginServer) CheckCharacterName(peer *Peer, pkt protocol.Packet) error {
+func (server *LoginServer) CheckCharacterName(peer *protocol.CNPeer, pkt protocol.Packet) error {
 	var charPkt protocol.SP_CL2LS_REQ_CHECK_CHAR_NAME
 	pkt.Decode(&charPkt)
 
@@ -148,7 +148,7 @@ func (server *LoginServer) CheckCharacterName(peer *Peer, pkt protocol.Packet) e
 	})
 }
 
-func (server *LoginServer) SaveCharacterName(peer *Peer, pkt protocol.Packet) error {
+func (server *LoginServer) SaveCharacterName(peer *protocol.CNPeer, pkt protocol.Packet) error {
 	var charPkt protocol.SP_CL2LS_REQ_SAVE_CHAR_NAME
 	pkt.Decode(&charPkt)
 
@@ -200,7 +200,7 @@ func validateCharacterCreation(character *protocol.SP_CL2LS_REQ_CHAR_CREATE) boo
 	return true
 }
 
-func SendFail(peer *Peer) error {
+func SendFail(peer *protocol.CNPeer) error {
 	if err := peer.Send(protocol.P_LS2CL_REP_SHARD_SELECT_FAIL, protocol.SP_LS2CL_REP_SHARD_SELECT_FAIL{
 		IErrorCode: 2,
 	}); err != nil {
@@ -210,7 +210,7 @@ func SendFail(peer *Peer) error {
 	return nil
 }
 
-func (server *LoginServer) CharacterCreate(peer *Peer, pkt protocol.Packet) error {
+func (server *LoginServer) CharacterCreate(peer *protocol.CNPeer, pkt protocol.Packet) error {
 	var charPkt protocol.SP_CL2LS_REQ_CHAR_CREATE
 	pkt.Decode(&charPkt)
 
@@ -236,7 +236,7 @@ func (server *LoginServer) CharacterCreate(peer *Peer, pkt protocol.Packet) erro
 	})
 }
 
-func (server *LoginServer) CharacterDelete(peer *Peer, pkt protocol.Packet) error {
+func (server *LoginServer) CharacterDelete(peer *protocol.CNPeer, pkt protocol.Packet) error {
 	var charPkt protocol.SP_CL2LS_REQ_CHAR_DELETE
 	pkt.Decode(&charPkt)
 
@@ -250,7 +250,7 @@ func (server *LoginServer) CharacterDelete(peer *Peer, pkt protocol.Packet) erro
 	})
 }
 
-func (server *LoginServer) ShardSelect(peer *Peer, pkt protocol.Packet) error {
+func (server *LoginServer) ShardSelect(peer *protocol.CNPeer, pkt protocol.Packet) error {
 	var selection protocol.SP_CL2LS_REQ_CHAR_SELECT
 	pkt.Decode(&selection)
 
@@ -282,7 +282,7 @@ func (server *LoginServer) ShardSelect(peer *Peer, pkt protocol.Packet) error {
 	return peer.Send(protocol.P_LS2CL_REP_SHARD_SELECT_SUCC, resp)
 }
 
-func (server *LoginServer) FinishTutorial(peer *Peer, pkt protocol.Packet) error {
+func (server *LoginServer) FinishTutorial(peer *protocol.CNPeer, pkt protocol.Packet) error {
 	var charPkt protocol.SP_CL2LS_REQ_SAVE_CHAR_TUTOR
 	pkt.Decode(&charPkt)
 
