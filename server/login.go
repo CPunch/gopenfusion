@@ -6,9 +6,8 @@ import (
 	"time"
 
 	"github.com/CPunch/gopenfusion/config"
-	"github.com/CPunch/gopenfusion/db"
-	"github.com/CPunch/gopenfusion/protocol"
-	"github.com/CPunch/gopenfusion/util"
+	"github.com/CPunch/gopenfusion/core/db"
+	"github.com/CPunch/gopenfusion/core/protocol"
 )
 
 const (
@@ -113,15 +112,14 @@ func (server *LoginServer) Login(peer *protocol.CNPeer, pkt protocol.Packet) err
 	// build character list
 	charInfo := [4]protocol.SP_LS2CL_REP_CHAR_INFO{}
 	for i, plr := range plrs {
-		PCStyle, PCStyle2 := util.Player2PCStyle(&plr)
 		info := protocol.SP_LS2CL_REP_CHAR_INFO{
 			ISlot:      int8(plr.Slot),
 			ILevel:     int16(plr.Level),
-			SPC_Style:  PCStyle,
-			SPC_Style2: PCStyle2,
-			IX:         int32(plr.XCoordinate),
-			IY:         int32(plr.YCoordinate),
-			IZ:         int32(plr.ZCoordinate),
+			SPC_Style:  plr.PCStyle,
+			SPC_Style2: plr.PCStyle2,
+			IX:         int32(plr.X),
+			IY:         int32(plr.Y),
+			IZ:         int32(plr.Z),
 		}
 
 		AEquip, err := server.dbHndlr.GetPlayerInventorySlots(plr.PlayerID, 0, config.AEQUIP_COUNT-1)
@@ -227,11 +225,10 @@ func (server *LoginServer) CharacterCreate(peer *protocol.CNPeer, pkt protocol.P
 		return SendFail(peer)
 	}
 
-	PCStyle, PCStyle2 := util.Player2PCStyle(plr)
 	return peer.Send(protocol.P_LS2CL_REP_CHAR_CREATE_SUCC, protocol.SP_LS2CL_REP_CHAR_CREATE_SUCC{
 		ILevel:     int16(plr.Level),
-		SPC_Style:  PCStyle,
-		SPC_Style2: PCStyle2,
+		SPC_Style:  plr.PCStyle,
+		SPC_Style2: plr.PCStyle2,
 		SOn_Item:   charPkt.SOn_Item, // if items were faked, we don't really care since the db only stores the sanitized fields
 	})
 }

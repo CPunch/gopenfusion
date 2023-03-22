@@ -4,7 +4,7 @@ import (
 	"log"
 
 	"github.com/CPunch/gopenfusion/config"
-	"github.com/CPunch/gopenfusion/db"
+	"github.com/CPunch/gopenfusion/core/db"
 	"github.com/CPunch/gopenfusion/server"
 )
 

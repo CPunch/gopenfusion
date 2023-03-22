@@ -1,7 +1,7 @@
 package server
 
 import (
-	"github.com/CPunch/gopenfusion/protocol"
+	"github.com/CPunch/gopenfusion/core/protocol"
 )
 
 type PacketHandler func(peer *protocol.CNPeer, pkt protocol.Packet) error

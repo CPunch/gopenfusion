@@ -6,8 +6,8 @@ import (
 	"net"
 	"sync"
 
-	"github.com/CPunch/gopenfusion/db"
-	"github.com/CPunch/gopenfusion/protocol"
+	"github.com/CPunch/gopenfusion/core/db"
+	"github.com/CPunch/gopenfusion/core/protocol"
 )
 
 type LoginServer struct {

@@ -7,7 +7,7 @@ import (
 	"log"
 	"net"
 
-	"github.com/CPunch/gopenfusion/protocol/pool"
+	"github.com/CPunch/gopenfusion/core/protocol/pool"
 )
 
 const (
@@ -16,8 +16,8 @@ const (
 )
 
 type PeerHandler interface {
-	HandlePacket(client *CNPeer, typeID uint32, pkt Packet) error
-	Disconnect(client *CNPeer)
+	HandlePacket(peer *CNPeer, typeID uint32, pkt Packet) error
+	Disconnect(peer *CNPeer)
 }
 
 // CNPeer is a simple wrapper for net.Conn connections to send/recv packets over the Fusionfall packet protocol.

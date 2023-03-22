@@ -7,8 +7,9 @@ import (
 	"sync"
 	"time"
 
-	"github.com/CPunch/gopenfusion/db"
-	"github.com/CPunch/gopenfusion/protocol"
+	"github.com/CPunch/gopenfusion/core"
+	"github.com/CPunch/gopenfusion/core/db"
+	"github.com/CPunch/gopenfusion/core/protocol"
 )
 
 type LoginMetadata struct {
@@ -22,7 +23,7 @@ type ShardServer struct {
 	port               int
 	dbHndlr            *db.DBHandler
 	packetHandlers     map[uint32]PacketHandler
-	peers              sync.Map // [*protocol.CNPeer]*db.Player
+	peers              sync.Map // [*protocol.CNPeer]*core.Player
 	loginMetadataQueue sync.Map // [int64]*LoginMetadata w/ int64 = serialKey
 }
 
@@ -88,19 +89,19 @@ func (server *ShardServer) Connect(peer *protocol.CNPeer) {
 	server.peers.Store(peer, nil)
 }
 
-func (server *ShardServer) JoinPlayer(peer *protocol.CNPeer, player *db.Player) {
+func (server *ShardServer) JoinPlayer(peer *protocol.CNPeer, player *core.Player) {
 	server.peers.Store(peer, player)
 }
 
 // Simple wrapper for server.peers.Range, if f returns false the iteration is stopped.
-func (server *ShardServer) RangePeers(f func(peer *protocol.CNPeer, player *db.Player) bool) {
+func (server *ShardServer) RangePeers(f func(peer *protocol.CNPeer, player *core.Player) bool) {
 	server.peers.Range(func(key, value any) bool { // simple wrapper to cast the datatypes
 		peer, ok := key.(*protocol.CNPeer)
 		if !ok { // this should never happen
 			panic(fmt.Errorf("ShardServer.peers has an invalid key: peers[%#v] = %#v", key, value))
 		}
 
-		player, ok := value.(*db.Player)
+		player, ok := value.(*core.Player)
 		if !ok { // this should also never happen
 			panic(fmt.Errorf("ShardServer.peers has an invalid value: peers[%#v] = %#v", key, value))
 		}
