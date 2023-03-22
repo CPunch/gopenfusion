@@ -124,7 +124,7 @@ const (
 )
 
 func (db *DBHandler) readPlayer(rows *sql.Rows) (*core.Player, error) {
-	plr := core.Player{}
+	plr := core.Player{ActiveNanoSlotNum: -1}
 
 	if err := rows.Scan(
 		&plr.PlayerID, &plr.AccountID, &plr.Slot, &plr.PCStyle.SzFirstName, &plr.PCStyle.SzLastName,

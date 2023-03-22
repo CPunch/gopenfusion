@@ -41,7 +41,8 @@ func NewShardServer(dbHndlr *db.DBHandler, port int) (*ShardServer, error) {
 	}
 
 	server.packetHandlers = map[uint32]PacketHandler{
-		protocol.P_CL2FE_REQ_PC_ENTER: server.RequestEnter,
+		protocol.P_CL2FE_REQ_PC_ENTER:            server.RequestEnter,
+		protocol.P_CL2FE_REQ_PC_LOADING_COMPLETE: server.LoadingComplete,
 	}
 
 	return server, nil
@@ -87,6 +88,20 @@ func (server *ShardServer) Disconnect(peer *protocol.CNPeer) {
 func (server *ShardServer) Connect(peer *protocol.CNPeer) {
 	log.Printf("New peer %p connected to SHARD\n", peer)
 	server.peers.Store(peer, nil)
+}
+
+func (server *ShardServer) GetPlayer(peer *protocol.CNPeer) *core.Player {
+	val, ok := server.peers.Load(peer)
+	if !ok {
+		return nil
+	}
+
+	plr, ok := val.(*core.Player)
+	if !ok {
+		return nil
+	}
+
+	return plr
 }
 
 func (server *ShardServer) JoinPlayer(peer *protocol.CNPeer, player *core.Player) {

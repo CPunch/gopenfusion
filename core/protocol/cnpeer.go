@@ -87,6 +87,10 @@ func (peer *CNPeer) Send(typeID uint32, data ...interface{}) error {
 	return nil
 }
 
+func (peer *CNPeer) SetActiveKey(whichKey int) {
+	peer.whichKey = whichKey
+}
+
 func (peer *CNPeer) Kill() {
 	if !peer.alive {
 		return

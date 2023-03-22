@@ -34,3 +34,31 @@ type Player struct {
 	Fatigue            int
 	CurrentMissionID   int
 }
+
+func (plr *Player) ToPCLoadData2CL() protocol.SPCLoadData2CL {
+	return protocol.SPCLoadData2CL{
+		IUserLevel:         int16(plr.AccountLevel),
+		PCStyle:            plr.PCStyle,
+		PCStyle2:           plr.PCStyle2,
+		IMentor:            int16(plr.Mentor),
+		IMentorCount:       1,
+		IHP:                int32(plr.HP),
+		IBatteryW:          int32(plr.BatteryW),
+		IBatteryN:          int32(plr.BatteryN),
+		ICandy:             int32(plr.Taros),
+		IFusionMatter:      int32(plr.FusionMatter),
+		ISpecialState:      0,
+		IMapNum:            0,
+		IX:                 int32(plr.X),
+		IY:                 int32(plr.Y),
+		IZ:                 int32(plr.Z),
+		IAngle:             int32(plr.Angle),
+		AEquip:             plr.Equip,
+		AInven:             plr.Inven,
+		ANanoSlots:         [3]int16{int16(plr.EquippedNanos[0]), int16(plr.EquippedNanos[1]), int16(plr.EquippedNanos[2])},
+		IActiveNanoSlotNum: int16(plr.ActiveNanoSlotNum),
+		IWarpLocationFlag:  int32(plr.WarpLocationFlag),
+		IBuddyWarpTime:     60,
+		IFatigue:           50,
+	}
+}
