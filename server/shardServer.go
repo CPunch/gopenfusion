@@ -23,8 +23,9 @@ type ShardServer struct {
 	port               int
 	dbHndlr            *db.DBHandler
 	packetHandlers     map[uint32]PacketHandler
-	peers              sync.Map // [*protocol.CNPeer]*core.Player
 	loginMetadataQueue sync.Map // [int64]*LoginMetadata w/ int64 = serialKey
+	peersLock          sync.Mutex
+	peers              sync.Map // [*protocol.CNPeer]core.Player
 }
 
 func NewShardServer(dbHndlr *db.DBHandler, port int) (*ShardServer, error) {
@@ -90,7 +91,7 @@ func (server *ShardServer) Connect(peer *protocol.CNPeer) {
 	server.peers.Store(peer, nil)
 }
 
-func (server *ShardServer) GetPlayer(peer *protocol.CNPeer) *core.Player {
+func (server *ShardServer) LoadPlayer(peer *protocol.CNPeer) *core.Player {
 	val, ok := server.peers.Load(peer)
 	if !ok {
 		return nil
@@ -104,7 +105,25 @@ func (server *ShardServer) GetPlayer(peer *protocol.CNPeer) *core.Player {
 	return plr
 }
 
-func (server *ShardServer) JoinPlayer(peer *protocol.CNPeer, player *core.Player) {
+// UpdatePlayer locks the peers map, and calls the provided callback. The returned new pointer will be stored, however if an error returns it will be passed back.
+// Since it is UNSAFE to write to the returned pointer from LoadPlayer, this wrapper is for the cases that state in the player struct needs to be updated.
+// TODO: maybe LoadPlayer should return a player by value instead?
+// The pointers new and old may be the same if you are just updating struct fields.
+func (server *ShardServer) UpdatePlayer(peer *protocol.CNPeer, f func(old *core.Player) (new *core.Player, err error)) error {
+	server.peersLock.Lock()
+	defer server.peersLock.Unlock()
+
+	// on fail, the player should not be stored
+	new, err := f(server.LoadPlayer(peer))
+	if err != nil {
+		return err
+	}
+
+	server.storePlayer(peer, new)
+	return nil
+}
+
+func (server *ShardServer) storePlayer(peer *protocol.CNPeer, player *core.Player) {
 	server.peers.Store(peer, player)
 }
 

@@ -2,9 +2,9 @@
 
 A toy implementation of the [Fusionfall Packet Protocol](https://openpunk.com/pages/fusionfall-openfusion/) written in Go.
 
-## Login Sever
+## Landwalker demo
 
-An example login server implementation exists in `server/`. This implementation should be compatible with existing OpenFusion databases, however this only exists as an example and doesn't direct clients to a shard server (they're softlocked after the tutorial, or during character selection).
+An implementation of a landwalker server is located in `server/`. This includes a functional login server and a dummy shard (supporting the minimum amount of packets necessary). The DB implementation in `core/db/` matches the OpenFusion 1.4 SQLite tables, which the login server located in `server/` uses. There's no support for NPCs nor other players, and is liable to softlock the client.
 
 ## Generating structures
 

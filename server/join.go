@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/CPunch/gopenfusion/core"
 	"github.com/CPunch/gopenfusion/core/protocol"
 )
 
@@ -18,19 +19,28 @@ func (server *ShardServer) RequestEnter(peer *protocol.CNPeer, pkt protocol.Pack
 		return err
 	}
 
-	plr, err := server.dbHndlr.GetPlayer(int(loginData.PlayerID))
-	if err != nil {
+	// attach player
+	var resp *protocol.SP_FE2CL_REP_PC_ENTER_SUCC
+	if err := server.UpdatePlayer(peer, func(old *core.Player) (*core.Player, error) {
+		if old != nil { // resending a shard enter packet?
+			return nil, fmt.Errorf("resent enter packet!")
+		}
+
+		plr, err := server.dbHndlr.GetPlayer(int(loginData.PlayerID))
+		if err != nil {
+			return nil, err
+		}
+
+		resp = &protocol.SP_FE2CL_REP_PC_ENTER_SUCC{
+			IID:           int32(plr.PlayerID),
+			PCLoadData2CL: plr.ToPCLoadData2CL(),
+			UiSvrTime:     uint64(time.Now().Unix()),
+		}
+
+		return plr, nil
+	}); err != nil {
 		peer.Send(protocol.P_FE2CL_REP_PC_ENTER_FAIL, protocol.SP_FE2CL_REP_PC_ENTER_FAIL{})
 		return err
-	}
-
-	// attach player
-	server.JoinPlayer(peer, plr)
-
-	resp := &protocol.SP_FE2CL_REP_PC_ENTER_SUCC{
-		IID:           int32(plr.PlayerID),
-		PCLoadData2CL: plr.ToPCLoadData2CL(),
-		UiSvrTime:     uint64(time.Now().Unix()),
 	}
 
 	// setup key
@@ -45,7 +55,7 @@ func (server *ShardServer) LoadingComplete(peer *protocol.CNPeer, pkt protocol.P
 	var loadComplete protocol.SP_CL2FE_REQ_PC_LOADING_COMPLETE
 	pkt.Decode(&loadComplete)
 
-	plr := server.GetPlayer(peer)
+	plr := server.LoadPlayer(peer)
 	if plr == nil {
 		return fmt.Errorf("peer has no player attached!")
 	}

@@ -120,7 +120,7 @@ func (peer *CNPeer) Handler() {
 		}
 
 		// grab buffer && read packet body
-		if err := func() error { // we wrap this in a closure so we can easily defer the buffer return to pool
+		if err := func() error {
 			buf := pool.Get()
 			defer pool.Put(buf)
 			if _, err := buf.ReadFrom(io.LimitReader(peer.conn, int64(sz))); err != nil {
