@@ -1,4 +1,4 @@
-package server
+package login
 
 import (
 	"encoding/binary"
@@ -8,6 +8,7 @@ import (
 	"github.com/CPunch/gopenfusion/config"
 	"github.com/CPunch/gopenfusion/core/db"
 	"github.com/CPunch/gopenfusion/core/protocol"
+	"github.com/CPunch/gopenfusion/shard"
 )
 
 const (
@@ -263,14 +264,14 @@ func (server *LoginServer) ShardSelect(peer *protocol.CNPeer, pkt protocol.Packe
 	// TODO: verify peer->AccountID and selection->IPC_UID are valid!!!!
 
 	resp := protocol.SP_LS2CL_REP_SHARD_SELECT_SUCC{
-		G_FE_ServerPort: int32(server.shard.port),
+		G_FE_ServerPort: int32(server.shard.GetPort()),
 		IEnterSerialKey: key,
 	}
 
 	// the rest of the bytes in G_FE_ServerIP will be zero'd, so there's no need to write the NULL byte
 	copy(resp.G_FE_ServerIP[:], []byte(config.SHARD_IP))
 
-	server.shard.QueueLogin(key, &LoginMetadata{
+	server.shard.QueueLogin(key, &shard.LoginMetadata{
 		FEKey:     peer.FE_key,
 		Timestamp: time.Now(),
 		PlayerID:  int32(selection.IPC_UID),

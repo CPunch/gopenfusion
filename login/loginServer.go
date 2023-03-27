@@ -1,4 +1,4 @@
-package server
+package login
 
 import (
 	"fmt"
@@ -8,7 +8,12 @@ import (
 
 	"github.com/CPunch/gopenfusion/core/db"
 	"github.com/CPunch/gopenfusion/core/protocol"
+	"github.com/CPunch/gopenfusion/shard"
 )
+
+type PacketHandler func(peer *protocol.CNPeer, pkt protocol.Packet) error
+
+func stubbedPacket(_ *protocol.CNPeer, _ protocol.Packet) error { /* stubbed */ return nil }
 
 type LoginServer struct {
 	listener       net.Listener
@@ -17,7 +22,7 @@ type LoginServer struct {
 	packetHandlers map[uint32]PacketHandler
 	peers          map[*protocol.CNPeer]bool
 	peersLock      sync.Mutex
-	shard          *ShardServer
+	shard          *shard.ShardServer
 }
 
 func NewLoginServer(dbHndlr *db.DBHandler, port int) (*LoginServer, error) {
@@ -95,6 +100,6 @@ func (server *LoginServer) Connect(peer *protocol.CNPeer) {
 	server.peersLock.Unlock()
 }
 
-func (server *LoginServer) AddShard(shard *ShardServer) {
+func (server *LoginServer) AddShard(shard *shard.ShardServer) {
 	server.shard = shard
 }

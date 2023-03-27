@@ -5,7 +5,8 @@ import (
 
 	"github.com/CPunch/gopenfusion/config"
 	"github.com/CPunch/gopenfusion/core/db"
-	"github.com/CPunch/gopenfusion/server"
+	"github.com/CPunch/gopenfusion/login"
+	"github.com/CPunch/gopenfusion/shard"
 )
 
 func main() {
@@ -15,12 +16,12 @@ func main() {
 	}
 	dbHndlr.Setup()
 
-	loginServer, err := server.NewLoginServer(dbHndlr, config.LOGIN_PORT)
+	loginServer, err := login.NewLoginServer(dbHndlr, config.LOGIN_PORT)
 	if err != nil {
 		log.Panicf("failed to create login server: %v", err)
 	}
 
-	shardServer, err := server.NewShardServer(dbHndlr, config.SHARD_PORT)
+	shardServer, err := shard.NewShardServer(dbHndlr, config.SHARD_PORT)
 	if err != nil {
 		log.Panicf("failed to create shard server: %v", err)
 	}

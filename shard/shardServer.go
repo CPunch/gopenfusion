@@ -1,4 +1,4 @@
-package server
+package shard
 
 import (
 	"fmt"
@@ -17,6 +17,10 @@ type LoginMetadata struct {
 	Timestamp time.Time
 	PlayerID  int32
 }
+
+type PacketHandler func(peer *protocol.CNPeer, pkt protocol.Packet) error
+
+func stubbedPacket(_ *protocol.CNPeer, _ protocol.Packet) error { /* stubbed */ return nil }
 
 type ShardServer struct {
 	listener           net.Listener
@@ -67,6 +71,10 @@ func (server *ShardServer) Start() {
 		server.Connect(client)
 		go client.Handler()
 	}
+}
+
+func (server *ShardServer) GetPort() int {
+	return server.port
 }
 
 func (server *ShardServer) HandlePacket(peer *protocol.CNPeer, typeID uint32, pkt protocol.Packet) error {
