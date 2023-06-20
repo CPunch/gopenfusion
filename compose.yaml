@@ -1,0 +1,19 @@
+
+services:
+  # redis:
+  #   image: 'redislabs/redismod'
+  #   ports:
+  #     - '6379:6379'
+  login:
+    restart: on-failure
+    build: .
+    hostname: login
+    ports:
+      - '23001:23001'
+      - '23000:23000'
+  # shard0:
+  #   restart: on-failure
+  #   build: .
+  #   hostname: shard0
+  #   ports:
+  #     - '23001:23001'
