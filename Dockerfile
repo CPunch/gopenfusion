@@ -1,10 +1,7 @@
-FROM alpine:latest
-
-WORKDIR /gopenfusion
+FROM scratch
 
 # grab binary
-COPY ./bin/server ./
-RUN chmod +x ./server
+WORKDIR /gopenfusion
+COPY --chmod=0755 ./bin/server ./
 
-ENTRYPOINT [ "/bin/sh", "-l", "-c" ]
-CMD ["/gopenfusion/server"]
+ENTRYPOINT [ "/gopenfusion/server" ]

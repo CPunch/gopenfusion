@@ -1,5 +1,5 @@
 #!/bin/sh
 
 mkdir -p bin
-go build -o ./bin/server
+CGO_ENABLED=0 GOOS=linux go build -o ./bin/server
 echo 'Done'
