@@ -24,7 +24,7 @@ services:
     links:
       - postgresql
       - redis
-  shard0:
+  shard:
     restart: on-failure
     build: .
     hostname: shard
