@@ -49,7 +49,7 @@ func (server *ShardServer) RequestEnter(peer *protocol.CNPeer, pkt protocol.Pack
 	peer.FE_key = loginData.FEKey
 	peer.SetActiveKey(protocol.USE_FE)
 
-	log.Printf("Player %d (AccountID %d) entered\n", resp.IID, loginData.PlayerID)
+	log.Printf("Player %d (AccountID %d) entered\n", resp.IID, loginData.AccountID)
 	return peer.Send(protocol.P_FE2CL_REP_PC_ENTER_SUCC, resp)
 }
 

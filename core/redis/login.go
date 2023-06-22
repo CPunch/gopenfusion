@@ -9,8 +9,9 @@ import (
 )
 
 type LoginMetadata struct {
-	FEKey    []byte `json:",omitempty"`
-	PlayerID int32  `json:",omitempty"`
+	FEKey     []byte `json:",omitempty"`
+	PlayerID  int32  `json:",omitempty"`
+	AccountID int    `json:",omitempty"`
 }
 
 // we store login queues into redis with the name "loginMetadata_<serialKey>"

@@ -286,8 +286,9 @@ func (server *LoginServer) ShardSelect(peer *protocol.CNPeer, pkt protocol.Packe
 
 	// share the login attempt
 	server.redisHndlr.QueueLogin(key, redis.LoginMetadata{
-		FEKey:    peer.FE_key,
-		PlayerID: int32(selection.IPC_UID),
+		FEKey:     peer.FE_key,
+		PlayerID:  int32(selection.IPC_UID),
+		AccountID: peer.AccountID,
 	})
 
 	// craft response
