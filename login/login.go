@@ -3,12 +3,14 @@ package login
 import (
 	"encoding/binary"
 	"fmt"
+	"log"
+	"math/rand"
 	"time"
 
 	"github.com/CPunch/gopenfusion/config"
 	"github.com/CPunch/gopenfusion/core/db"
 	"github.com/CPunch/gopenfusion/core/protocol"
-	"github.com/CPunch/gopenfusion/shard"
+	"github.com/CPunch/gopenfusion/core/redis"
 )
 
 const (
@@ -104,6 +106,7 @@ func (server *LoginServer) Login(peer *protocol.CNPeer, pkt protocol.Packet) err
 		SendError(LOGIN_DATABASE_ERROR)
 		return err
 	}
+	log.Printf("Account (%d) %s has logged in", account.AccountID, account.Login)
 
 	// truncate plrs
 	if len(plrs) > 3 {
@@ -218,11 +221,13 @@ func (server *LoginServer) CharacterCreate(peer *protocol.CNPeer, pkt protocol.P
 	}
 
 	if err := server.dbHndlr.FinishPlayer(&charPkt, peer.AccountID); err != nil {
+		log.Printf("Error finishing player: %v", err)
 		return SendFail(peer)
 	}
 
 	plr, err := server.dbHndlr.GetPlayer(int(charPkt.PCStyle.IPC_UID))
 	if err != nil {
+		log.Printf("Error getting player: %v", err)
 		return SendFail(peer)
 	}
 
@@ -252,8 +257,10 @@ func (server *LoginServer) ShardSelect(peer *protocol.CNPeer, pkt protocol.Packe
 	var selection protocol.SP_CL2LS_REQ_CHAR_SELECT
 	pkt.Decode(&selection)
 
-	if server.shard == nil {
-		return fmt.Errorf("LoginServer currently has no linked shard")
+	shards := server.redisHndlr.GetShards()
+	if len(shards) == 0 {
+		SendFail(peer)
+		return fmt.Errorf("LoginServer has found no linked shards!")
 	}
 
 	key, err := protocol.GenSerialKey()
@@ -261,21 +268,36 @@ func (server *LoginServer) ShardSelect(peer *protocol.CNPeer, pkt protocol.Packe
 		return err
 	}
 
-	// TODO: verify peer->AccountID and selection->IPC_UID are valid!!!!
+	// TODO: better shard selection logic pls
+	// for now, pick random shard
+	shard := shards[rand.Intn(len(shards))]
 
+	// make sure the player is owned by the account
+	plr, err := server.dbHndlr.GetPlayer(int(selection.IPC_UID))
+	if err != nil {
+		log.Printf("Error getting player: %v", err)
+		return SendFail(peer)
+	}
+
+	if plr.AccountID != peer.AccountID {
+		log.Printf("HACK: player %d tried to join shard as player %d", peer.AccountID, plr.AccountID)
+		return SendFail(peer)
+	}
+
+	// share the login attempt
+	server.redisHndlr.QueueLogin(key, redis.LoginMetadata{
+		FEKey:    peer.FE_key,
+		PlayerID: int32(selection.IPC_UID),
+	})
+
+	// craft response
 	resp := protocol.SP_LS2CL_REP_SHARD_SELECT_SUCC{
-		G_FE_ServerPort: int32(server.shard.GetPort()),
+		G_FE_ServerPort: int32(shard.Port),
 		IEnterSerialKey: key,
 	}
 
 	// the rest of the bytes in G_FE_ServerIP will be zero'd, so there's no need to write the NULL byte
-	copy(resp.G_FE_ServerIP[:], []byte(config.SHARD_IP))
-
-	server.shard.QueueLogin(key, &shard.LoginMetadata{
-		FEKey:     peer.FE_key,
-		Timestamp: time.Now(),
-		PlayerID:  int32(selection.IPC_UID),
-	})
+	copy(resp.G_FE_ServerIP[:], []byte(shard.IP))
 
 	return peer.Send(protocol.P_LS2CL_REP_SHARD_SELECT_SUCC, resp)
 }

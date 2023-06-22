@@ -5,18 +5,13 @@ import (
 	"log"
 	"net"
 	"sync"
-	"time"
 
+	"github.com/CPunch/gopenfusion/config"
 	"github.com/CPunch/gopenfusion/core"
 	"github.com/CPunch/gopenfusion/core/db"
 	"github.com/CPunch/gopenfusion/core/protocol"
+	"github.com/CPunch/gopenfusion/core/redis"
 )
-
-type LoginMetadata struct {
-	FEKey     []byte
-	Timestamp time.Time
-	PlayerID  int32
-}
 
 type PacketHandler func(peer *protocol.CNPeer, pkt protocol.Packet) error
 
@@ -26,13 +21,14 @@ type ShardServer struct {
 	listener           net.Listener
 	port               int
 	dbHndlr            *db.DBHandler
+	redisHndlr         *redis.RedisHandler
 	packetHandlers     map[uint32]PacketHandler
 	loginMetadataQueue sync.Map // [int64]*LoginMetadata w/ int64 = serialKey
 	peersLock          sync.Mutex
 	peers              sync.Map // [*protocol.CNPeer]core.Player
 }
 
-func NewShardServer(dbHndlr *db.DBHandler, port int) (*ShardServer, error) {
+func NewShardServer(dbHndlr *db.DBHandler, redisHndlr *redis.RedisHandler, port int) (*ShardServer, error) {
 	listener, err := net.Listen("tcp", fmt.Sprintf(":%d", port))
 	if err != nil {
 		return nil, err
@@ -42,6 +38,7 @@ func NewShardServer(dbHndlr *db.DBHandler, port int) (*ShardServer, error) {
 		listener:       listener,
 		port:           port,
 		dbHndlr:        dbHndlr,
+		redisHndlr:     redisHndlr,
 		packetHandlers: make(map[uint32]PacketHandler),
 	}
 
@@ -49,6 +46,11 @@ func NewShardServer(dbHndlr *db.DBHandler, port int) (*ShardServer, error) {
 		protocol.P_CL2FE_REQ_PC_ENTER:            server.RequestEnter,
 		protocol.P_CL2FE_REQ_PC_LOADING_COMPLETE: server.LoadingComplete,
 	}
+
+	redisHndlr.RegisterShard(redis.ShardMetadata{
+		IP:   config.GetAnnounceIP(),
+		Port: port,
+	})
 
 	return server, nil
 }
@@ -58,7 +60,7 @@ func (server *ShardServer) RegisterPacketHandler(typeID uint32, hndlr PacketHand
 }
 
 func (server *ShardServer) Start() {
-	log.Printf("Server hosted on 127.0.0.1:%d\n", server.port)
+	log.Printf("Shard service hosted on %s:%d\n", config.GetAnnounceIP(), server.port)
 
 	for {
 		conn, err := server.listener.Accept()
@@ -150,22 +152,4 @@ func (server *ShardServer) RangePeers(f func(peer *protocol.CNPeer, player *core
 
 		return f(peer, player)
 	})
-}
-
-func (server *ShardServer) QueueLogin(serialKey int64, meta *LoginMetadata) {
-	server.loginMetadataQueue.Store(serialKey, meta)
-}
-
-func (server *ShardServer) CheckLogin(serialKey int64) (*LoginMetadata, error) {
-	value, ok := server.loginMetadataQueue.Load(serialKey)
-	if !ok {
-		return nil, fmt.Errorf("serialKey %x is not valid!", serialKey)
-	}
-
-	meta, ok := value.(*LoginMetadata)
-	if !ok { // should never happen
-		panic(fmt.Errorf("ShardServer.loginMetadataQueue has an invalid value: loginMetadataQueue[%x] = %#v", serialKey, value))
-	}
-
-	return meta, nil
 }

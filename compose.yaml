@@ -1,19 +1,42 @@
 
 services:
-  # redis:
-  #   image: 'redislabs/redismod'
-  #   ports:
-  #     - '6379:6379'
+  postgresql:
+    image: 'postgres:15'
+    environment:
+      - POSTGRES_USER=gopenfusion
+      - POSTGRES_DB=gopenfusion
+      - POSTGRES_PASSWORD=gopenfusion
+  redis:
+    image: 'redis:7-alpine'
   login:
     restart: on-failure
     build: .
     hostname: login
+    command: login
+    environment:
+      - DB_ADDR=postgresql:5432
+      - DB_USER=gopenfusion
+      - DB_PASS=gopenfusion
+      - DB_NAME=gopenfusion
+      - REDIS_ADDR=redis:6379
+    ports:
+      - '23000:23000'
+    links:
+      - postgresql
+      - redis
+  shard0:
+    restart: on-failure
+    build: .
+    hostname: shard
+    command: shard
+    environment:
+      - DB_ADDR=postgresql:5432
+      - DB_USER=gopenfusion
+      - DB_PASS=gopenfusion
+      - DB_NAME=gopenfusion
+      - REDIS_ADDR=redis:6379
     ports:
       - '23001:23001'
-      - '23000:23000'
-  # shard0:
-  #   restart: on-failure
-  #   build: .
-  #   hostname: shard0
-  #   ports:
-  #     - '23001:23001'
+    links:
+      - postgresql
+      - redis

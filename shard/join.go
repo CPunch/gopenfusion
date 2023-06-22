@@ -2,6 +2,7 @@ package shard
 
 import (
 	"fmt"
+	"log"
 	"time"
 
 	"github.com/CPunch/gopenfusion/core"
@@ -12,7 +13,7 @@ func (server *ShardServer) RequestEnter(peer *protocol.CNPeer, pkt protocol.Pack
 	var enter protocol.SP_CL2FE_REQ_PC_ENTER
 	pkt.Decode(&enter)
 
-	loginData, err := server.CheckLogin(enter.IEnterSerialKey)
+	loginData, err := server.redisHndlr.GetLogin(enter.IEnterSerialKey)
 	if err != nil {
 		// the error codes for P_FE2CL_REP_PC_ENTER_FAIL aren't referenced in the client :(
 		peer.Send(protocol.P_FE2CL_REP_PC_ENTER_FAIL, protocol.SP_FE2CL_REP_PC_ENTER_FAIL{})
@@ -48,6 +49,7 @@ func (server *ShardServer) RequestEnter(peer *protocol.CNPeer, pkt protocol.Pack
 	peer.FE_key = loginData.FEKey
 	peer.SetActiveKey(protocol.USE_FE)
 
+	log.Printf("Player %d (AccountID %d) entered\n", resp.IID, loginData.PlayerID)
 	return peer.Send(protocol.P_FE2CL_REP_PC_ENTER_SUCC, resp)
 }
 

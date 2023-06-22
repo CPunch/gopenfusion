@@ -10,7 +10,8 @@ import (
 	_ "embed"
 	"fmt"
 
-	_ "github.com/glebarez/go-sqlite"
+	"github.com/CPunch/gopenfusion/config"
+	_ "github.com/lib/pq"
 )
 
 type DBHandler struct {
@@ -20,10 +21,10 @@ type DBHandler struct {
 //go:embed migrations/new.sql
 var createDBQuery string
 
-func OpenLiteDB(dbPath string) (*DBHandler, error) {
-	sqliteFmt := fmt.Sprintf("%s", dbPath)
+func OpenPostgresDB(dbAddr string) (*DBHandler, error) {
+	fmt := fmt.Sprintf("postgresql://%s:%s@%s/%s?sslmode=disable", config.GetDBUser(), config.GetDBPass(), dbAddr, config.GetDBName())
 
-	db, err := sql.Open("sqlite", sqliteFmt)
+	db, err := sql.Open("postgres", fmt)
 	if err != nil {
 		return nil, err
 	}

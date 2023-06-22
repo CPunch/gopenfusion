@@ -4,18 +4,15 @@ go 1.19
 
 require (
 	github.com/blockloop/scan v1.3.0
-	github.com/glebarez/go-sqlite v1.21.0
+	github.com/georgysavva/scany/v2 v2.0.0
+	github.com/google/subcommands v1.2.0
+	github.com/lib/pq v1.10.9
+	github.com/redis/go-redis/v9 v9.0.5
 	golang.org/x/crypto v0.7.0
 )
 
 require (
-	github.com/dustin/go-humanize v1.0.1 // indirect
-	github.com/google/uuid v1.3.0 // indirect
-	github.com/mattn/go-isatty v0.0.17 // indirect
-	github.com/remyoudompheng/bigfft v0.0.0-20230126093431-47fa9a501578 // indirect
-	golang.org/x/sys v0.6.0 // indirect
-	modernc.org/libc v1.22.2 // indirect
-	modernc.org/mathutil v1.5.0 // indirect
-	modernc.org/memory v1.5.0 // indirect
-	modernc.org/sqlite v1.20.4 // indirect
+	github.com/cespare/xxhash/v2 v2.2.0 // indirect
+	github.com/dgryski/go-rendezvous v0.0.0-20200823014737-9f7001d12a5f // indirect
+	github.com/mattn/go-sqlite3 v1.14.15 // indirect
 )

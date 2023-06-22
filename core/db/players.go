@@ -19,19 +19,19 @@ func (db *DBHandler) NewPlayer(AccountID int, FirstName, LastName string, slot i
 	var PlayerID int
 	if err := db.Transaction(func(tx *sql.Tx) error {
 		// create player
-		row, err := tx.Query(
-			"INSERT INTO Players (AccountID, Slot, FirstName, LastName, XCoordinate, YCoordinate, ZCoordinate, Angle, HP, NameCheck, Quests, SkywayLocationFlag, FirstUseFlag) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) RETURNING PlayerID",
+		rows, err := tx.Query(
+			"INSERT INTO Players (AccountID, Slot, FirstName, LastName, XCoordinate, YCoordinate, ZCoordinate, Angle, HP, NameCheck, Quests, SkywayLocationFlag, FirstUseFlag) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13) RETURNING PlayerID",
 			AccountID, slot, FirstName, LastName, config.SPAWN_X, config.SPAWN_Y, config.SPAWN_Z, 0, config.GetMaxHP(1), nameCheck, QuestFlag, SkywayLocationFlag, FirstUseFlag)
 		if err != nil {
 			return err
 		}
 
-		if err := scan.Row(&PlayerID, row); err != nil {
+		if err := scan.Row(&PlayerID, rows); err != nil {
 			return err
 		}
 
 		// create appearance
-		if _, err := tx.Exec("INSERT INTO Appearances (PlayerID) VALUES (?)", PlayerID); err != nil {
+		if _, err := tx.Exec("INSERT INTO Appearances (PlayerID) VALUES ($1)", PlayerID); err != nil {
 			return err
 		}
 
@@ -47,13 +47,13 @@ func (db *DBHandler) NewPlayer(AccountID int, FirstName, LastName string, slot i
 func (db *DBHandler) FinishPlayer(character *protocol.SP_CL2LS_REQ_CHAR_CREATE, AccountId int) error {
 	return db.Transaction(func(tx *sql.Tx) error {
 		// update AppearanceFlag
-		_, err := tx.Exec("UPDATE Players SET AppearanceFlag = 1 WHERE PlayerID = ? AND AccountID = ? AND AppearanceFlag = 0", character.PCStyle.IPC_UID, AccountId)
+		_, err := tx.Exec("UPDATE Players SET AppearanceFlag = 1 WHERE PlayerID = $1 AND AccountID = $2 AND AppearanceFlag = 0", character.PCStyle.IPC_UID, AccountId)
 		if err != nil {
 			return err
 		}
 
 		// update Appearance
-		_, err = tx.Exec("UPDATE Appearances SET Body = ?, EyeColor = ?, FaceStyle = ?, Gender = ?, HairColor = ?, HairStyle = ?, Height = ?, SkinColor = ? WHERE PlayerID = ?",
+		_, err = tx.Exec("UPDATE Appearances SET Body = $1, EyeColor = $2, FaceStyle = $3, Gender = $4, HairColor = $5, HairStyle = $6, Height = $7, SkinColor = $8 WHERE PlayerID = $9",
 			character.PCStyle.IBody,
 			character.PCStyle.IEyeColor,
 			character.PCStyle.IFaceStyle,
@@ -70,7 +70,7 @@ func (db *DBHandler) FinishPlayer(character *protocol.SP_CL2LS_REQ_CHAR_CREATE, 
 		// update Inventory
 		items := [3]int16{character.SOn_Item.IEquipUBID, character.SOn_Item.IEquipLBID, character.SOn_Item.IEquipFootID}
 		for i := 0; i < len(items); i++ {
-			_, err = tx.Exec("INSERT INTO Inventory (PlayerID, Slot, ID, Type, Opt) VALUES (?, ?, ?, ?, 1)", character.PCStyle.IPC_UID, i, items[i], i+1)
+			_, err = tx.Exec("INSERT INTO Inventory (PlayerID, Slot, ID, Type, Opt) VALUES ($1, $2, $3, $4, 1)", character.PCStyle.IPC_UID, i, items[i], i+1)
 			if err != nil {
 				return err
 			}
@@ -81,7 +81,7 @@ func (db *DBHandler) FinishPlayer(character *protocol.SP_CL2LS_REQ_CHAR_CREATE, 
 }
 
 func (db *DBHandler) FinishTutorial(PlayerID, AccountID int) error {
-	_, err := db.Exec("UPDATE Players SET TutorialFlag = 1 WHERE PlayerID = ? AND AccountID = ? AND TutorialFlag = 0", PlayerID, AccountID)
+	_, err := db.Exec("UPDATE Players SET TutorialFlag = 1 WHERE PlayerID = $1 AND AccountID = $2 AND TutorialFlag = 0", PlayerID, AccountID)
 	if err != nil {
 		return err
 	}
@@ -92,16 +92,14 @@ func (db *DBHandler) FinishTutorial(PlayerID, AccountID int) error {
 
 // returns the deleted Slot number
 func (db *DBHandler) DeletePlayer(PlayerID, AccountID int) (int, error) {
-	row, err := db.Query("DELETE FROM Players WHERE AccountID = ? AND PlayerID = ? RETURNING Slot")
+	row, err := db.Query("DELETE FROM Players WHERE AccountID = $1 AND PlayerID = $2 RETURNING Slot")
 	if err != nil {
 		return -1, err
 	}
 
 	var slot int
-	for row.Next() {
-		if err := row.Scan(&slot); err != nil {
-			return -1, err
-		}
+	if err := row.Scan(&slot); err != nil {
+		return -1, err
 	}
 
 	return slot, nil
@@ -165,7 +163,7 @@ func (db *DBHandler) readPlayer(rows *sql.Rows) (*core.Player, error) {
 }
 
 func (db *DBHandler) GetPlayer(PlayerID int) (*core.Player, error) {
-	rows, err := db.Query(QUERY_PLAYERS+"WHERE p.PlayerID = ?", PlayerID)
+	rows, err := db.Query(QUERY_PLAYERS+"WHERE p.PlayerID = $1", PlayerID)
 	if err != nil {
 		return nil, err
 	}
@@ -182,7 +180,7 @@ func (db *DBHandler) GetPlayer(PlayerID int) (*core.Player, error) {
 }
 
 func (db *DBHandler) GetPlayers(AccountID int) ([]core.Player, error) {
-	rows, err := db.Query(QUERY_PLAYERS+"WHERE p.AccountID = ?", AccountID)
+	rows, err := db.Query(QUERY_PLAYERS+"WHERE p.AccountID = $1", AccountID)
 	if err != nil {
 		return nil, err
 	}

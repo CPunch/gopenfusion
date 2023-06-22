@@ -6,9 +6,10 @@ import (
 	"net"
 	"sync"
 
+	"github.com/CPunch/gopenfusion/config"
 	"github.com/CPunch/gopenfusion/core/db"
 	"github.com/CPunch/gopenfusion/core/protocol"
-	"github.com/CPunch/gopenfusion/shard"
+	"github.com/CPunch/gopenfusion/core/redis"
 )
 
 type PacketHandler func(peer *protocol.CNPeer, pkt protocol.Packet) error
@@ -19,23 +20,24 @@ type LoginServer struct {
 	listener       net.Listener
 	port           int
 	dbHndlr        *db.DBHandler
+	redisHndlr     *redis.RedisHandler
 	packetHandlers map[uint32]PacketHandler
 	peers          map[*protocol.CNPeer]bool
 	peersLock      sync.Mutex
-	shard          *shard.ShardServer
 }
 
-func NewLoginServer(dbHndlr *db.DBHandler, port int) (*LoginServer, error) {
+func NewLoginServer(dbHndlr *db.DBHandler, redisHndlr *redis.RedisHandler, port int) (*LoginServer, error) {
 	listener, err := net.Listen("tcp", fmt.Sprintf(":%d", port))
 	if err != nil {
 		return nil, err
 	}
 
 	server := &LoginServer{
-		listener: listener,
-		port:     port,
-		dbHndlr:  dbHndlr,
-		peers:    make(map[*protocol.CNPeer]bool),
+		listener:   listener,
+		port:       port,
+		dbHndlr:    dbHndlr,
+		redisHndlr: redisHndlr,
+		peers:      make(map[*protocol.CNPeer]bool),
 	}
 
 	server.packetHandlers = map[uint32]PacketHandler{
@@ -59,7 +61,7 @@ func NewLoginServer(dbHndlr *db.DBHandler, port int) (*LoginServer, error) {
 }
 
 func (server *LoginServer) Start() {
-	log.Printf("Server hosted on 127.0.0.1:%d\n", server.port)
+	log.Printf("Login service hosted on %s:%d\n", config.GetAnnounceIP(), server.port)
 
 	for {
 		conn, err := server.listener.Accept()
@@ -98,8 +100,4 @@ func (server *LoginServer) Connect(peer *protocol.CNPeer) {
 	log.Printf("New peer %p connected to LOGIN\n", peer)
 	server.peers[peer] = true
 	server.peersLock.Unlock()
-}
-
-func (server *LoginServer) AddShard(shard *shard.ShardServer) {
-	server.shard = shard
 }

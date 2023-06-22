@@ -1,29 +1,31 @@
--- this file has been lifted from https://github.com/OpenFusionProject/OpenFusion/blob/master/sql/tables.sql
+-- this file has been lifted from https://github.com/OpenFusionProject/OpenFusion/bytea/master/sql/tables.sql
 -- all credit to original contributors!
 
+CREATE EXTENSION IF NOT EXISTS citext;
+
 CREATE TABLE IF NOT EXISTS Accounts (
-    AccountID    INTEGER NOT NULL,
-    Login        TEXT    NOT NULL UNIQUE COLLATE NOCASE,
+    AccountID    SERIAL  NOT NULL,
+    Login        CITEXT    NOT NULL UNIQUE,
     Password     TEXT    NOT NULL,
     Selected     INTEGER  DEFAULT 1 NOT NULL,
     AccountLevel INTEGER NOT NULL,
-    Created      INTEGER DEFAULT (strftime('%s', 'now')) NOT NULL,
-    LastLogin    INTEGER DEFAULT (strftime('%s', 'now')) NOT NULL,
+    Created      INTEGER DEFAULT (extract(EPOCH FROM current_time)) NOT NULL,
+    LastLogin    INTEGER DEFAULT (extract(EPOCH FROM current_time)) NOT NULL,
     BannedUntil  INTEGER DEFAULT 0 NOT NULL,
     BannedSince  INTEGER DEFAULT 0 NOT NULL,
     BanReason    TEXT    DEFAULT '' NOT NULL,
-    PRIMARY KEY(AccountID AUTOINCREMENT)
+    PRIMARY KEY(AccountID)
 );
 
 CREATE TABLE IF NOT EXISTS Players (
-    PlayerID           INTEGER NOT NULL,
+    PlayerID           SERIAL  NOT NULL,
     AccountID          INTEGER NOT NULL,
-    FirstName          TEXT NOT NULL COLLATE NOCASE,
-    LastName           TEXT NOT NULL COLLATE NOCASE,
+    FirstName          CITEXT NOT NULL,
+    LastName           CITEXT NOT NULL,
     NameCheck          INTEGER NOT NULL,
     Slot               INTEGER NOT NULL,
-    Created            INTEGER DEFAULT (strftime('%s', 'now')) NOT NULL,
-    LastLogin          INTEGER DEFAULT (strftime('%s', 'now')) NOT NULL,
+    Created            INTEGER DEFAULT (extract(EPOCH FROM current_time)) NOT NULL,
+    LastLogin          INTEGER DEFAULT (extract(EPOCH FROM current_time)) NOT NULL,
     Level              INTEGER DEFAULT 1 NOT NULL,
     Nano1              INTEGER DEFAULT 0 NOT NULL,
     Nano2              INTEGER DEFAULT 0 NOT NULL,
@@ -43,10 +45,10 @@ CREATE TABLE IF NOT EXISTS Players (
     Mentor             INTEGER DEFAULT 5 NOT NULL,
     CurrentMissionID   INTEGER DEFAULT 0 NOT NULL,
     WarpLocationFlag   INTEGER DEFAULT 0 NOT NULL,
-    SkywayLocationFlag BLOB NOT NULL,
-    FirstUseFlag       BLOB NOT NULL,
-    Quests             BLOB NOT NULL,
-    PRIMARY KEY(PlayerID AUTOINCREMENT),
+    SkywayLocationFlag bytea NOT NULL,
+    FirstUseFlag       bytea NOT NULL,
+    Quests             bytea NOT NULL,
+    PRIMARY KEY(PlayerID),
     FOREIGN KEY(AccountID) REFERENCES Accounts(AccountID) ON DELETE CASCADE,
     UNIQUE (AccountID, Slot),
     UNIQUE (FirstName, LastName)
@@ -123,8 +125,8 @@ CREATE TABLE IF NOT EXISTS EmailData (
     ReadFlag        INTEGER NOT NULL,
     ItemFlag        INTEGER NOT NULL,
     SenderID        INTEGER NOT NULL,
-    SenderFirstName TEXT NOT NULL COLLATE NOCASE,
-    SenderLastName  TEXT NOT NULL COLLATE NOCASE,
+    SenderFirstName CITEXT NOT NULL,
+    SenderLastName  CITEXT NOT NULL,
     SubjectLine     TEXT NOT NULL,
     MsgBody         TEXT NOT NULL,
     Taros           INTEGER NOT NULL,
