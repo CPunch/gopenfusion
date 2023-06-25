@@ -49,6 +49,10 @@ func (server *ShardServer) RequestEnter(peer *protocol.CNPeer, pkt protocol.Pack
 	peer.FE_key = loginData.FEKey
 	peer.SetActiveKey(protocol.USE_FE)
 
+	// setup peer
+	peer.PlayerID = loginData.PlayerID
+	peer.AccountID = loginData.AccountID
+
 	log.Printf("Player %d (AccountID %d) entered\n", resp.IID, loginData.AccountID)
 	return peer.Send(protocol.P_FE2CL_REP_PC_ENTER_SUCC, resp)
 }
@@ -57,9 +61,9 @@ func (server *ShardServer) LoadingComplete(peer *protocol.CNPeer, pkt protocol.P
 	var loadComplete protocol.SP_CL2FE_REQ_PC_LOADING_COMPLETE
 	pkt.Decode(&loadComplete)
 
-	plr := server.LoadPlayer(peer)
-	if plr == nil {
-		return fmt.Errorf("peer has no player attached!")
+	plr, err := server.LoadPlayer(peer)
+	if err != nil {
+		return err
 	}
 
 	return peer.Send(protocol.P_FE2CL_REP_PC_LOADING_COMPLETE_SUCC, protocol.SP_FE2CL_REP_PC_LOADING_COMPLETE_SUCC{IPC_ID: int32(plr.PlayerID)})

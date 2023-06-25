@@ -28,6 +28,7 @@ type CNPeer struct {
 	E_key     []byte
 	FE_key    []byte
 	AccountID int
+	PlayerID  int32
 	whichKey  int
 	alive     bool
 }
