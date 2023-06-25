@@ -33,6 +33,7 @@ var (
 	SHARD_PORT = 23001
 
 	LOGIN_TIMEOUT = time.Second * 30
+	VIEW_DISTANCE = 25600
 )
 
 func getEnv(key string, fallback string) string {

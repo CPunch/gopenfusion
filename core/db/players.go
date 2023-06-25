@@ -4,7 +4,7 @@ import (
 	"database/sql"
 
 	"github.com/CPunch/gopenfusion/config"
-	"github.com/CPunch/gopenfusion/core"
+	"github.com/CPunch/gopenfusion/core/entity"
 	"github.com/CPunch/gopenfusion/core/protocol"
 	"github.com/blockloop/scan"
 )
@@ -121,8 +121,8 @@ const (
 	INNER JOIN Accounts as acc ON p.AccountID = acc.AccountID `
 )
 
-func (db *DBHandler) readPlayer(rows *sql.Rows) (*core.Player, error) {
-	plr := core.Player{ActiveNanoSlotNum: -1}
+func (db *DBHandler) readPlayer(rows *sql.Rows) (*entity.Player, error) {
+	plr := entity.Player{ActiveNanoSlotNum: -1}
 
 	if err := rows.Scan(
 		&plr.PlayerID, &plr.AccountID, &plr.Slot, &plr.PCStyle.SzFirstName, &plr.PCStyle.SzLastName,
@@ -162,13 +162,13 @@ func (db *DBHandler) readPlayer(rows *sql.Rows) (*core.Player, error) {
 	return &plr, nil
 }
 
-func (db *DBHandler) GetPlayer(PlayerID int) (*core.Player, error) {
+func (db *DBHandler) GetPlayer(PlayerID int) (*entity.Player, error) {
 	rows, err := db.Query(QUERY_PLAYERS+"WHERE p.PlayerID = $1", PlayerID)
 	if err != nil {
 		return nil, err
 	}
 
-	var plr *core.Player
+	var plr *entity.Player
 	for rows.Next() {
 		plr, err = db.readPlayer(rows)
 		if err != nil {
@@ -179,13 +179,13 @@ func (db *DBHandler) GetPlayer(PlayerID int) (*core.Player, error) {
 	return plr, nil
 }
 
-func (db *DBHandler) GetPlayers(AccountID int) ([]core.Player, error) {
+func (db *DBHandler) GetPlayers(AccountID int) ([]entity.Player, error) {
 	rows, err := db.Query(QUERY_PLAYERS+"WHERE p.AccountID = $1", AccountID)
 	if err != nil {
 		return nil, err
 	}
 
-	var plrs []core.Player
+	var plrs []entity.Player
 	for rows.Next() {
 		plr, err := db.readPlayer(rows)
 		if err != nil {

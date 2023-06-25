@@ -7,9 +7,10 @@ import (
 	"sync"
 
 	"github.com/CPunch/gopenfusion/config"
-	"github.com/CPunch/gopenfusion/core"
 	"github.com/CPunch/gopenfusion/core/db"
+	"github.com/CPunch/gopenfusion/core/entity"
 	"github.com/CPunch/gopenfusion/core/protocol"
+	"github.com/CPunch/gopenfusion/core/protocol/pool"
 	"github.com/CPunch/gopenfusion/core/redis"
 )
 
@@ -22,9 +23,11 @@ type ShardServer struct {
 	port           int
 	dbHndlr        *db.DBHandler
 	redisHndlr     *redis.RedisHandler
+	eRecv          chan *protocol.Event
 	packetHandlers map[uint32]PacketHandler
-	peersLock      sync.Mutex
-	peers          map[*protocol.CNPeer]*core.Player
+	peers          map[*protocol.CNPeer]*entity.Player
+	chunks         map[entity.ChunkPosition]*entity.Chunk
+	peerLock       sync.Mutex
 }
 
 func NewShardServer(dbHndlr *db.DBHandler, redisHndlr *redis.RedisHandler, port int) (*ShardServer, error) {
@@ -39,6 +42,9 @@ func NewShardServer(dbHndlr *db.DBHandler, redisHndlr *redis.RedisHandler, port 
 		dbHndlr:        dbHndlr,
 		redisHndlr:     redisHndlr,
 		packetHandlers: make(map[uint32]PacketHandler),
+		peers:          make(map[*protocol.CNPeer]*entity.Player),
+		chunks:         make(map[entity.ChunkPosition]*entity.Chunk),
+		eRecv:          make(chan *protocol.Event),
 	}
 
 	server.packetHandlers = map[uint32]PacketHandler{
@@ -54,13 +60,28 @@ func NewShardServer(dbHndlr *db.DBHandler, redisHndlr *redis.RedisHandler, port 
 	return server, nil
 }
 
-func (server *ShardServer) RegisterPacketHandler(typeID uint32, hndlr PacketHandler) {
-	server.packetHandlers[typeID] = hndlr
+func (server *ShardServer) handleEvents() {
+	for {
+		select {
+		case event := <-server.eRecv:
+			switch event.Type {
+			case protocol.EVENT_CLIENT_DISCONNECT:
+				server.disconnect(event.Peer)
+			case protocol.EVENT_CLIENT_PACKET:
+				defer pool.Put(event.Pkt)
+				log.Printf("Received packet %x from %p\n", event.PktID, event.Peer)
+				if err := server.handlePacket(event.Peer, event.PktID, protocol.NewPacket(event.Pkt)); err != nil {
+					event.Peer.Kill()
+				}
+			}
+		}
+	}
 }
 
 func (server *ShardServer) Start() {
 	log.Printf("Shard service hosted on %s:%d\n", config.GetAnnounceIP(), server.port)
 
+	go server.handleEvents()
 	for {
 		conn, err := server.listener.Accept()
 		if err != nil {
@@ -68,8 +89,8 @@ func (server *ShardServer) Start() {
 			return
 		}
 
-		client := protocol.NewCNPeer(server, conn)
-		server.Connect(client)
+		client := protocol.NewCNPeer(server.eRecv, conn)
+		server.connect(client)
 		go client.Handler()
 	}
 }
@@ -78,7 +99,7 @@ func (server *ShardServer) GetPort() int {
 	return server.port
 }
 
-func (server *ShardServer) HandlePacket(peer *protocol.CNPeer, typeID uint32, pkt protocol.Packet) error {
+func (server *ShardServer) handlePacket(peer *protocol.CNPeer, typeID uint32, pkt protocol.Packet) error {
 	if hndlr, ok := server.packetHandlers[typeID]; ok {
 		if err := hndlr(peer, pkt); err != nil {
 			return err
@@ -90,47 +111,39 @@ func (server *ShardServer) HandlePacket(peer *protocol.CNPeer, typeID uint32, pk
 	return nil
 }
 
-func (server *ShardServer) Disconnect(peer *protocol.CNPeer) {
+func (server *ShardServer) disconnect(peer *protocol.CNPeer) {
+	server.peerLock.Lock()
+	defer server.peerLock.Unlock()
+
 	log.Printf("Peer %p disconnected from SHARD\n", peer)
 	delete(server.peers, peer)
 }
 
-func (server *ShardServer) Connect(peer *protocol.CNPeer) {
+func (server *ShardServer) connect(peer *protocol.CNPeer) {
+	server.peerLock.Lock()
+	defer server.peerLock.Unlock()
+
 	log.Printf("New peer %p connected to SHARD\n", peer)
 	server.peers[peer] = nil
 }
 
-// Returns a copy of the player
-func (server *ShardServer) LoadPlayer(peer *protocol.CNPeer) (core.Player, error) {
+func (server *ShardServer) getPlayer(peer *protocol.CNPeer) (*entity.Player, error) {
 	plr, ok := server.peers[peer]
 	if !ok {
-		return core.Player{}, fmt.Errorf("Player not found")
+		return nil, fmt.Errorf("Player not found")
 	}
 
-	return *plr, nil
+	return plr, nil
 }
 
-// UpdatePlayer locks the peers map, and calls the provided callback. The returned new pointer will be stored, however if an error returns it will be passed back.
-// Since it is UNSAFE to write to the returned pointer from LoadPlayer, this wrapper is for the cases that state in the player struct needs to be updated.
-// The pointers new and old may be the same if you are just updating struct fields. This function should NOT be called recursively.
-func (server *ShardServer) UpdatePlayer(peer *protocol.CNPeer, f func(old *core.Player) (new *core.Player, err error)) error {
-	server.peersLock.Lock()
-	defer server.peersLock.Unlock()
-
-	// on fail, the player should not be stored
-	new, err := f(server.peers[peer])
-	if err != nil {
-		return err
-	}
-
-	server.peers[peer] = new
-	return nil
+func (server *ShardServer) setPlayer(peer *protocol.CNPeer, plr *entity.Player) {
+	server.peers[peer] = plr
 }
 
 // If f returns false the iteration is stopped.
-func (server *ShardServer) RangePeers(f func(peer *protocol.CNPeer) bool) {
-	for peer := range server.peers {
-		if f(peer) {
+func (server *ShardServer) rangePeers(f func(peer *protocol.CNPeer, plr *entity.Player) bool) {
+	for peer, plr := range server.peers {
+		if f(peer, plr) {
 			return
 		}
 	}

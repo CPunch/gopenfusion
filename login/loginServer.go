@@ -9,6 +9,7 @@ import (
 	"github.com/CPunch/gopenfusion/config"
 	"github.com/CPunch/gopenfusion/core/db"
 	"github.com/CPunch/gopenfusion/core/protocol"
+	"github.com/CPunch/gopenfusion/core/protocol/pool"
 	"github.com/CPunch/gopenfusion/core/redis"
 )
 
@@ -21,9 +22,10 @@ type LoginServer struct {
 	port           int
 	dbHndlr        *db.DBHandler
 	redisHndlr     *redis.RedisHandler
-	packetHandlers map[uint32]PacketHandler
+	eRecv          chan *protocol.Event
 	peers          map[*protocol.CNPeer]bool
-	peersLock      sync.Mutex
+	packetHandlers map[uint32]PacketHandler
+	peerLock       sync.Mutex
 }
 
 func NewLoginServer(dbHndlr *db.DBHandler, redisHndlr *redis.RedisHandler, port int) (*LoginServer, error) {
@@ -38,6 +40,7 @@ func NewLoginServer(dbHndlr *db.DBHandler, redisHndlr *redis.RedisHandler, port 
 		dbHndlr:    dbHndlr,
 		redisHndlr: redisHndlr,
 		peers:      make(map[*protocol.CNPeer]bool),
+		eRecv:      make(chan *protocol.Event),
 	}
 
 	server.packetHandlers = map[uint32]PacketHandler{
@@ -63,6 +66,7 @@ func NewLoginServer(dbHndlr *db.DBHandler, redisHndlr *redis.RedisHandler, port 
 func (server *LoginServer) Start() {
 	log.Printf("Login service hosted on %s:%d\n", config.GetAnnounceIP(), server.port)
 
+	go server.handleEvents()
 	for {
 		conn, err := server.listener.Accept()
 		if err != nil {
@@ -70,13 +74,32 @@ func (server *LoginServer) Start() {
 			return
 		}
 
-		client := protocol.NewCNPeer(server, conn)
-		server.Connect(client)
+		client := protocol.NewCNPeer(server.eRecv, conn)
+		server.connect(client)
 		go client.Handler()
 	}
 }
 
-func (server *LoginServer) HandlePacket(peer *protocol.CNPeer, typeID uint32, pkt protocol.Packet) error {
+func (server *LoginServer) handleEvents() {
+	for {
+		select {
+		case event := <-server.eRecv:
+			switch event.Type {
+			case protocol.EVENT_CLIENT_DISCONNECT:
+				server.disconnect(event.Peer)
+			case protocol.EVENT_CLIENT_PACKET:
+				defer pool.Put(event.Pkt)
+
+				if err := server.handlePacket(event.Peer, event.PktID, protocol.NewPacket(event.Pkt)); err != nil {
+					log.Printf("Error handling packet: %v", err)
+					event.Peer.Kill()
+				}
+			}
+		}
+	}
+}
+
+func (server *LoginServer) handlePacket(peer *protocol.CNPeer, typeID uint32, pkt protocol.Packet) error {
 	if hndlr, ok := server.packetHandlers[typeID]; ok {
 		if err := hndlr(peer, pkt); err != nil {
 			return err
@@ -88,16 +111,18 @@ func (server *LoginServer) HandlePacket(peer *protocol.CNPeer, typeID uint32, pk
 	return nil
 }
 
-func (server *LoginServer) Disconnect(peer *protocol.CNPeer) {
-	server.peersLock.Lock()
+func (server *LoginServer) disconnect(peer *protocol.CNPeer) {
+	server.peerLock.Lock()
+	defer server.peerLock.Unlock()
+
 	log.Printf("Peer %p disconnected from LOGIN\n", peer)
 	delete(server.peers, peer)
-	server.peersLock.Unlock()
 }
 
-func (server *LoginServer) Connect(peer *protocol.CNPeer) {
-	server.peersLock.Lock()
+func (server *LoginServer) connect(peer *protocol.CNPeer) {
+	server.peerLock.Lock()
+	defer server.peerLock.Unlock()
+
 	log.Printf("New peer %p connected to LOGIN\n", peer)
 	server.peers[peer] = true
-	server.peersLock.Unlock()
 }

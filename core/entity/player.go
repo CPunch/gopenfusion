@@ -1,4 +1,4 @@
-package core
+package entity
 
 import (
 	"github.com/CPunch/gopenfusion/config"
@@ -6,6 +6,8 @@ import (
 )
 
 type Player struct {
+	Peer               *protocol.CNPeer
+	CurrentChunk       *Chunk
 	PlayerID           int
 	AccountID          int
 	AccountLevel       int
@@ -33,6 +35,38 @@ type Player struct {
 	ActiveNanoSlotNum  int
 	Fatigue            int
 	CurrentMissionID   int
+}
+
+// ==================== Entity interface ====================
+
+func (plr *Player) GetKind() EntityKind {
+	return ENTITY_KIND_PLAYER
+}
+
+func (plr *Player) GetChunk() *Chunk {
+	return plr.CurrentChunk
+}
+
+func (plr *Player) GetPosition() (x int, y int, z int) {
+	return plr.X, plr.Y, plr.Z
+}
+
+func (plr *Player) GetAngle() int {
+	return plr.Angle
+}
+
+func (plr *Player) SetPosition(x, y, z int) {
+	plr.X = x
+	plr.Y = y
+	plr.Z = z
+}
+
+func (plr *Player) SetAngle(angle int) {
+	plr.Angle = angle
+}
+
+func (plr *Player) SetChunk(chunk *Chunk) {
+	plr.CurrentChunk = chunk
 }
 
 func (plr *Player) ToPCLoadData2CL() protocol.SPCLoadData2CL {

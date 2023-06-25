@@ -217,6 +217,7 @@ func (server *LoginServer) CharacterCreate(peer *protocol.CNPeer, pkt protocol.P
 	pkt.Decode(&charPkt)
 
 	if !validateCharacterCreation(&charPkt) {
+		log.Printf("Invalid character creation packet: %+v", charPkt)
 		return SendFail(peer)
 	}
 

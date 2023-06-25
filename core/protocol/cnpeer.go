@@ -15,15 +15,10 @@ const (
 	USE_FE
 )
 
-type PeerHandler interface {
-	HandlePacket(peer *CNPeer, typeID uint32, pkt Packet) error
-	Disconnect(peer *CNPeer)
-}
-
 // CNPeer is a simple wrapper for net.Conn connections to send/recv packets over the Fusionfall packet protocol.
 type CNPeer struct {
 	conn      net.Conn
-	handler   PeerHandler
+	eRecv     chan *Event
 	SzID      string
 	E_key     []byte
 	FE_key    []byte
@@ -33,10 +28,10 @@ type CNPeer struct {
 	alive     bool
 }
 
-func NewCNPeer(handler PeerHandler, conn net.Conn) *CNPeer {
+func NewCNPeer(eRecv chan *Event, conn net.Conn) *CNPeer {
 	return &CNPeer{
 		conn:      conn,
-		handler:   handler,
+		eRecv:     eRecv,
 		SzID:      "",
 		E_key:     []byte(DEFAULT_KEY),
 		FE_key:    nil,
@@ -93,13 +88,14 @@ func (peer *CNPeer) SetActiveKey(whichKey int) {
 }
 
 func (peer *CNPeer) Kill() {
+	log.Printf("Killing peer %p", peer)
 	if !peer.alive {
 		return
 	}
 
 	peer.alive = false
 	peer.conn.Close()
-	peer.handler.Disconnect(peer)
+	peer.eRecv <- &Event{Type: EVENT_CLIENT_DISCONNECT, Peer: peer}
 }
 
 // meant to be invoked as a goroutine
@@ -123,7 +119,6 @@ func (peer *CNPeer) Handler() {
 		// grab buffer && read packet body
 		if err := func() error {
 			buf := pool.Get()
-			defer pool.Put(buf)
 			if _, err := buf.ReadFrom(io.LimitReader(peer.conn, int64(sz))); err != nil {
 				return fmt.Errorf("failed to read packet body! %v", err)
 			}
@@ -132,18 +127,15 @@ func (peer *CNPeer) Handler() {
 			DecryptData(buf.Bytes(), peer.E_key)
 			pkt := NewPacket(buf)
 
-			// create packet && read typeID
-			var typeID uint32
-			if err := pkt.Decode(&typeID); err != nil {
+			// create packet && read pktID
+			var pktID uint32
+			if err := pkt.Decode(&pktID); err != nil {
 				return fmt.Errorf("failed to read packet type! %v", err)
 			}
 
 			// dispatch packet
-			log.Printf("Got packet ID: %x, with a sizeof: %d\n", typeID, sz)
-			if err := peer.handler.HandlePacket(peer, typeID, pkt); err != nil {
-				return err
-			}
-
+			log.Printf("Got packet ID: %x, with a sizeof: %d\n", pktID, sz)
+			peer.eRecv <- &Event{Type: EVENT_CLIENT_PACKET, Peer: peer, Pkt: buf, PktID: pktID}
 			return nil
 		}(); err != nil {
 			log.Printf("[FATAL] %v", err)
