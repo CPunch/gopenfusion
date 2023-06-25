@@ -1,6 +1,7 @@
 package shard
 
 import (
+	"github.com/CPunch/gopenfusion/core/entity"
 	"github.com/CPunch/gopenfusion/core/protocol"
 )
 
@@ -9,12 +10,16 @@ func (server *ShardServer) updatePlayerPosition(peer *protocol.CNPeer, X, Y, Z, 
 	if err != nil {
 		return err
 	}
+	newPos := entity.MakeChunkPosition(X, Y)
+	oldPos := plr.Chunk
 
 	plr.X = X
 	plr.Y = Y
 	plr.Z = Z
 	plr.Angle = Angle
-
+	if newPos != oldPos {
+		server.updateEntityChunk(plr, oldPos, newPos)
+	}
 	return nil
 }
 

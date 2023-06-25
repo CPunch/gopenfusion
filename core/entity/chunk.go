@@ -3,43 +3,27 @@ package entity
 import (
 	"log"
 	"sync"
-
-	"github.com/CPunch/gopenfusion/config"
 )
-
-type ChunkPosition struct {
-	X int
-	Y int
-}
-
-func makeChunkPosition(x, y int) ChunkPosition {
-	return ChunkPosition{
-		X: x / (config.VIEW_DISTANCE / 3),
-		Y: y / (config.VIEW_DISTANCE / 3),
-	}
-}
 
 type Chunk struct {
 	Position ChunkPosition
-	entities map[Entity]struct{}
+	Entities map[Entity]struct{}
 	lock     sync.Mutex
 }
 
 func NewChunk(position ChunkPosition) *Chunk {
 	return &Chunk{
 		Position: position,
-		entities: make(map[Entity]struct{}),
+		Entities: make(map[Entity]struct{}),
 	}
 }
 
 func (c *Chunk) AddEntity(entity Entity) {
-	entity.SetChunk(c)
-	c.entities[entity] = struct{}{}
+	c.Entities[entity] = struct{}{}
 }
 
 func (c *Chunk) RemoveEntity(entity Entity) {
-	entity.SetChunk(nil)
-	delete(c.entities, entity)
+	delete(c.Entities, entity)
 }
 
 // send packet to all peers in this chunk and kill each peer if error
@@ -47,7 +31,7 @@ func (c *Chunk) SendPacket(typeID uint32, pkt ...interface{}) {
 	c.lock.Lock()
 	defer c.lock.Unlock()
 
-	for entity := range c.entities {
+	for entity := range c.Entities {
 		if entity.GetKind() != ENTITY_KIND_PLAYER {
 			continue
 		}
@@ -59,6 +43,7 @@ func (c *Chunk) SendPacket(typeID uint32, pkt ...interface{}) {
 		peer := plr.Peer
 
 		if err := peer.Send(typeID, pkt...); err != nil {
+			log.Printf("Error sending packet to peer %p: %v", peer, err)
 			peer.Kill()
 		}
 	}
@@ -76,4 +61,21 @@ func (c *Chunk) GetAdjacentPositions() []ChunkPosition {
 		{c.Position.X + 1, c.Position.Y},
 		{c.Position.X + 1, c.Position.Y + 1},
 	}
+}
+
+// https://stackoverflow.com/a/45428032 lol
+func ChunkSliceDifference(a, b []*Chunk) []*Chunk {
+	m := make(map[*Chunk]struct{})
+	for _, item := range b {
+		m[item] = struct{}{}
+	}
+
+	var diff []*Chunk
+	for _, item := range a {
+		if _, ok := m[item]; !ok {
+			diff = append(diff, item)
+		}
+	}
+
+	return diff
 }

@@ -115,6 +115,14 @@ func (server *ShardServer) disconnect(peer *protocol.CNPeer) {
 	server.peerLock.Lock()
 	defer server.peerLock.Unlock()
 
+	// remove from chunk(s)
+	plr, ok := server.peers[peer]
+	if ok {
+		log.Printf("Player %d (AccountID %d) disconnected\n", plr.PlayerID, plr.AccountID)
+		server.removeEntityFromChunks(server.getViewableChunks(plr.Chunk), plr)
+		server.getChunk(plr.Chunk).RemoveEntity(plr)
+	}
+
 	log.Printf("Peer %p disconnected from SHARD\n", peer)
 	delete(server.peers, peer)
 }

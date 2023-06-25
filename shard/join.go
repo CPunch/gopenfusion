@@ -22,9 +22,10 @@ func (server *ShardServer) attachPlayer(peer *protocol.CNPeer, meta redis.LoginM
 	if err != nil {
 		return nil, err
 	}
+	plr.Peer = peer
 
 	server.setPlayer(peer, plr)
-	return plr, err
+	return plr, nil
 }
 
 func (server *ShardServer) RequestEnter(peer *protocol.CNPeer, pkt protocol.Packet) error {
@@ -57,6 +58,8 @@ func (server *ShardServer) RequestEnter(peer *protocol.CNPeer, pkt protocol.Pack
 	peer.SetActiveKey(protocol.USE_FE)
 
 	log.Printf("Player %d (AccountID %d) entered\n", resp.IID, loginData.AccountID)
+
+	server.updatePlayerPosition(peer, int(plr.X), int(plr.Y), int(plr.Z), int(plr.Angle))
 	return peer.Send(protocol.P_FE2CL_REP_PC_ENTER_SUCC, resp)
 }
 

@@ -1,5 +1,7 @@
 package entity
 
+import "github.com/CPunch/gopenfusion/core/protocol"
+
 type EntityKind int
 
 const (
@@ -10,11 +12,14 @@ const (
 type Entity interface {
 	GetKind() EntityKind
 
-	GetChunk() *Chunk
+	GetChunk() ChunkPosition
 	GetPosition() (x int, y int, z int)
 	GetAngle() int
 
-	SetChunk(chunk *Chunk)
+	SetChunk(chunk ChunkPosition)
 	SetPosition(x, y, z int)
 	SetAngle(angle int)
+
+	DisappearFromViewOf(peer *protocol.CNPeer)
+	EnterIntoViewOf(peer *protocol.CNPeer)
 }
