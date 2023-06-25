@@ -28,11 +28,16 @@ func (c *Chunk) RemoveEntity(entity Entity) {
 
 // send packet to all peers in this chunk and kill each peer if error
 func (c *Chunk) SendPacket(typeID uint32, pkt ...interface{}) {
+	c.SendPacketExclude(nil, typeID, pkt...)
+}
+
+func (c *Chunk) SendPacketExclude(exclude Entity, typeID uint32, pkt ...interface{}) {
 	c.lock.Lock()
 	defer c.lock.Unlock()
 
 	for entity := range c.Entities {
-		if entity.GetKind() != ENTITY_KIND_PLAYER {
+		// only send to players, and exclude the player that sent the packet
+		if entity.GetKind() != ENTITY_KIND_PLAYER || entity == exclude {
 			continue
 		}
 

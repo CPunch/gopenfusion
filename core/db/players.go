@@ -122,7 +122,7 @@ const (
 )
 
 func (db *DBHandler) readPlayer(rows *sql.Rows) (*entity.Player, error) {
-	plr := entity.Player{ActiveNanoSlotNum: -1}
+	plr := entity.Player{ActiveNanoSlotNum: 0}
 
 	if err := rows.Scan(
 		&plr.PlayerID, &plr.AccountID, &plr.Slot, &plr.PCStyle.SzFirstName, &plr.PCStyle.SzLastName,

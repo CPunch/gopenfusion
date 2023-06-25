@@ -59,7 +59,7 @@ func (server *ShardServer) RequestEnter(peer *protocol.CNPeer, pkt protocol.Pack
 
 	log.Printf("Player %d (AccountID %d) entered\n", resp.IID, loginData.AccountID)
 
-	server.updatePlayerPosition(peer, int(plr.X), int(plr.Y), int(plr.Z), int(plr.Angle))
+	server.updatePlayerPosition(plr, int(plr.X), int(plr.Y), int(plr.Z), int(plr.Angle))
 	return peer.Send(protocol.P_FE2CL_REP_PC_ENTER_SUCC, resp)
 }
 

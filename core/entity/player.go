@@ -122,6 +122,6 @@ func (plr *Player) GetAppearanceData() protocol.SPCAppearanceData {
 		PCStyle:   plr.PCStyle,
 		IPCState:  plr.IPCState,
 		ItemEquip: plr.Equip,
-		Nano:      protocol.SNano{}, //plr.Nanos[plr.ActiveNanoSlotNum],
+		Nano:      plr.Nanos[plr.ActiveNanoSlotNum],
 	}
 }
