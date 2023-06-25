@@ -6,6 +6,7 @@ import (
 	"io"
 	"log"
 	"net"
+	"time"
 
 	"github.com/CPunch/gopenfusion/core/protocol/pool"
 )
@@ -26,6 +27,10 @@ type CNPeer struct {
 	PlayerID  int32
 	whichKey  int
 	alive     bool
+}
+
+func GetTime() uint64 {
+	return uint64(time.Now().UnixMilli())
 }
 
 func NewCNPeer(eRecv chan *Event, conn net.Conn) *CNPeer {

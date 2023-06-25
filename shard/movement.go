@@ -1,8 +1,6 @@
 package shard
 
 import (
-	"time"
-
 	"github.com/CPunch/gopenfusion/core/entity"
 	"github.com/CPunch/gopenfusion/core/protocol"
 )
@@ -32,7 +30,7 @@ func (server *ShardServer) playerMove(peer *protocol.CNPeer, pkt protocol.Packet
 	}
 
 	return server.sendOthersPacket(plr, protocol.P_FE2CL_PC_MOVE, protocol.SP_FE2CL_PC_MOVE{
-		ICliTime:  uint64(time.Now().Unix()),
+		ICliTime:  move.ICliTime,
 		IX:        move.IX,
 		IY:        move.IY,
 		IZ:        move.IZ,
@@ -43,7 +41,7 @@ func (server *ShardServer) playerMove(peer *protocol.CNPeer, pkt protocol.Packet
 		CKeyValue: move.CKeyValue,
 		ISpeed:    move.ISpeed,
 		IID:       int32(plr.PlayerID),
-		ISvrTime:  uint64(time.Now().Unix()),
+		ISvrTime:  protocol.GetTime(),
 	})
 }
 
@@ -63,12 +61,12 @@ func (server *ShardServer) playerStop(peer *protocol.CNPeer, pkt protocol.Packet
 	}
 
 	return server.sendOthersPacket(plr, protocol.P_FE2CL_PC_STOP, protocol.SP_FE2CL_PC_STOP{
-		ICliTime: uint64(time.Now().Unix()),
+		ICliTime: stop.ICliTime,
 		IX:       stop.IX,
 		IY:       stop.IY,
 		IZ:       stop.IZ,
 		IID:      int32(plr.PlayerID),
-		ISvrTime: uint64(time.Now().Unix()),
+		ISvrTime: protocol.GetTime(),
 	})
 }
 
@@ -88,7 +86,7 @@ func (server *ShardServer) playerJump(peer *protocol.CNPeer, pkt protocol.Packet
 	}
 
 	return server.sendOthersPacket(plr, protocol.P_FE2CL_PC_JUMP, protocol.SP_FE2CL_PC_JUMP{
-		ICliTime:  uint64(time.Now().Unix()),
+		ICliTime:  jump.ICliTime,
 		IX:        jump.IX,
 		IY:        jump.IY,
 		IZ:        jump.IZ,
@@ -99,6 +97,6 @@ func (server *ShardServer) playerJump(peer *protocol.CNPeer, pkt protocol.Packet
 		CKeyValue: jump.CKeyValue,
 		ISpeed:    jump.ISpeed,
 		IID:       int32(plr.PlayerID),
-		ISvrTime:  uint64(time.Now().Unix()),
+		ISvrTime:  protocol.GetTime(),
 	})
 }

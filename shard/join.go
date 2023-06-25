@@ -3,7 +3,6 @@ package shard
 import (
 	"fmt"
 	"log"
-	"time"
 
 	"github.com/CPunch/gopenfusion/core/entity"
 	"github.com/CPunch/gopenfusion/core/protocol"
@@ -47,7 +46,7 @@ func (server *ShardServer) RequestEnter(peer *protocol.CNPeer, pkt protocol.Pack
 	resp := &protocol.SP_FE2CL_REP_PC_ENTER_SUCC{
 		IID:           int32(plr.PlayerID),
 		PCLoadData2CL: plr.ToPCLoadData2CL(),
-		UiSvrTime:     uint64(time.Now().Unix()),
+		UiSvrTime:     protocol.GetTime(),
 	}
 
 	// setup peer

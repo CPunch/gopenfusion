@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"log"
 	"math/rand"
-	"time"
 
 	"github.com/CPunch/gopenfusion/config"
 	"github.com/CPunch/gopenfusion/core/db"
@@ -34,7 +33,7 @@ func (server *LoginServer) AcceptLogin(peer *protocol.CNPeer, SzID string, IClie
 		ISlotNum:      ISlotNum,
 		IPaymentFlag:  1,
 		IOpenBetaFlag: 0,
-		UiSvrTime:     uint64(time.Now().Unix()),
+		UiSvrTime:     protocol.GetTime(),
 	}
 
 	if err := peer.Send(protocol.P_LS2CL_REP_LOGIN_SUCC, resp); err != nil {
