@@ -58,8 +58,13 @@ func (server *ShardServer) RequestEnter(peer *protocol.CNPeer, pkt protocol.Pack
 
 	log.Printf("Player %d (AccountID %d) entered\n", resp.IID, loginData.AccountID)
 
+	if err := peer.Send(protocol.P_FE2CL_REP_PC_ENTER_SUCC, resp); err != nil {
+		return err
+	}
+
+	// we send the chunk updates (PC_NEW, NPC_NEW, etc.) after the enter packet
 	server.updatePlayerPosition(plr, int(plr.X), int(plr.Y), int(plr.Z), int(plr.Angle))
-	return peer.Send(protocol.P_FE2CL_REP_PC_ENTER_SUCC, resp)
+	return nil
 }
 
 func (server *ShardServer) LoadingComplete(peer *protocol.CNPeer, pkt protocol.Packet) error {

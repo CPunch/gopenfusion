@@ -14,6 +14,7 @@ import (
 		DB_USER
 		DB_PASS
 		ANNOUNCE_IP
+		TDATA_PATH
 */
 
 const (
@@ -77,4 +78,8 @@ func GetDBPass() string {
 // needed for shard
 func GetAnnounceIP() string {
 	return getEnv("ANNOUNCE_IP", "127.0.0.1")
+}
+
+func GetTDataPath() string {
+	return getEnv("TDATA_PATH", "./tdata")
 }

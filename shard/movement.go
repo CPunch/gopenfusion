@@ -5,13 +5,12 @@ import (
 	"github.com/CPunch/gopenfusion/core/protocol"
 )
 
-func (server *ShardServer) updatePlayerPosition(plr *entity.Player, X, Y, Z, Angle int) error {
+func (server *ShardServer) updatePlayerPosition(plr *entity.Player, X, Y, Z, Angle int) {
 	plr.X = X
 	plr.Y = Y
 	plr.Z = Z
 	plr.Angle = Angle
 	server.updateEntityChunk(plr, plr.GetChunk(), entity.MakeChunkPosition(X, Y))
-	return nil
 }
 
 func (server *ShardServer) playerMove(peer *protocol.CNPeer, pkt protocol.Packet) error {
@@ -25,9 +24,7 @@ func (server *ShardServer) playerMove(peer *protocol.CNPeer, pkt protocol.Packet
 	}
 
 	// update chunking
-	if err := server.updatePlayerPosition(plr, int(move.IX), int(move.IY), int(move.IZ), int(move.IAngle)); err != nil {
-		return err
-	}
+	server.updatePlayerPosition(plr, int(move.IX), int(move.IY), int(move.IZ), int(move.IAngle))
 
 	return server.sendOthersPacket(plr, protocol.P_FE2CL_PC_MOVE, protocol.SP_FE2CL_PC_MOVE{
 		ICliTime:  move.ICliTime,
@@ -56,9 +53,7 @@ func (server *ShardServer) playerStop(peer *protocol.CNPeer, pkt protocol.Packet
 	}
 
 	// update chunking
-	if err := server.updatePlayerPosition(plr, int(stop.IX), int(stop.IY), int(stop.IZ), plr.Angle); err != nil {
-		return err
-	}
+	server.updatePlayerPosition(plr, int(stop.IX), int(stop.IY), int(stop.IZ), plr.Angle)
 
 	return server.sendOthersPacket(plr, protocol.P_FE2CL_PC_STOP, protocol.SP_FE2CL_PC_STOP{
 		ICliTime: stop.ICliTime,
@@ -81,9 +76,7 @@ func (server *ShardServer) playerJump(peer *protocol.CNPeer, pkt protocol.Packet
 	}
 
 	// update chunking
-	if err := server.updatePlayerPosition(plr, int(jump.IX), int(jump.IY), int(jump.IZ), plr.Angle); err != nil {
-		return err
-	}
+	server.updatePlayerPosition(plr, int(jump.IX), int(jump.IY), int(jump.IZ), plr.Angle)
 
 	return server.sendOthersPacket(plr, protocol.P_FE2CL_PC_JUMP, protocol.SP_FE2CL_PC_JUMP{
 		ICliTime:  jump.ICliTime,

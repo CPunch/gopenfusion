@@ -35,6 +35,9 @@ services:
       - DB_PASS=gopenfusion
       - DB_NAME=gopenfusion
       - REDIS_ADDR=redis:6379
+      - TDATA_PATH=/tdata
+    volumes:
+      - './tdata:/tdata'
     ports:
       - '23001:23001'
     links:

@@ -72,7 +72,6 @@ func (server *ShardServer) handleEvents() {
 				server.disconnect(event.Peer)
 			case protocol.EVENT_CLIENT_PACKET:
 				defer pool.Put(event.Pkt)
-				log.Printf("Received packet %x from %p\n", event.PktID, event.Peer)
 				if err := server.handlePacket(event.Peer, event.PktID, protocol.NewPacket(event.Pkt)); err != nil {
 					event.Peer.Kill()
 				}
@@ -82,8 +81,9 @@ func (server *ShardServer) handleEvents() {
 }
 
 func (server *ShardServer) Start() {
-	log.Printf("Shard service hosted on %s:%d\n", config.GetAnnounceIP(), server.port)
+	server.LoadNPCs()
 
+	log.Printf("Shard service hosted on %s:%d\n", config.GetAnnounceIP(), server.port)
 	go server.handleEvents()
 	for {
 		conn, err := server.listener.Accept()
