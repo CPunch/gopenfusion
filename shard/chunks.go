@@ -4,6 +4,18 @@ import (
 	"github.com/CPunch/gopenfusion/core/entity"
 )
 
+func (server *ShardServer) addEntity(e entity.Entity) {
+	pos := e.GetChunk()
+	server.addEntityToChunks(server.getViewableChunks(pos), e)
+	server.getChunk(pos).AddEntity(e)
+}
+
+func (server *ShardServer) removeEntity(e entity.Entity) {
+	pos := e.GetChunk()
+	server.removeEntityFromChunks(server.getViewableChunks(pos), e)
+	server.getChunk(pos).RemoveEntity(e)
+}
+
 func (server *ShardServer) getChunk(pos entity.ChunkPosition) *entity.Chunk {
 	chunk, ok := server.chunks[pos]
 	if !ok {
@@ -35,7 +47,7 @@ func (server *ShardServer) sendOthersPacket(plr *entity.Player, typeID uint32, p
 
 func (server *ShardServer) removeEntityFromChunks(chunks []*entity.Chunk, this entity.Entity) {
 	for _, chunk := range chunks {
-		for e, _ := range chunk.Entities {
+		for e := range chunk.Entities {
 			if e == this {
 				continue
 			}
@@ -57,7 +69,7 @@ func (server *ShardServer) removeEntityFromChunks(chunks []*entity.Chunk, this e
 
 func (server *ShardServer) addEntityToChunks(chunks []*entity.Chunk, this entity.Entity) {
 	for _, chunk := range chunks {
-		for e, _ := range chunk.Entities {
+		for e := range chunk.Entities {
 			if e == this {
 				continue
 			}

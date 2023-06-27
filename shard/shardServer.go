@@ -122,8 +122,7 @@ func (server *ShardServer) disconnect(peer *protocol.CNPeer) {
 	plr, ok := server.peers[peer]
 	if ok {
 		log.Printf("Player %d (AccountID %d) disconnected\n", plr.PlayerID, plr.AccountID)
-		server.removeEntityFromChunks(server.getViewableChunks(plr.Chunk), plr)
-		server.getChunk(plr.Chunk).RemoveEntity(plr)
+		server.removeEntity(plr)
 	}
 
 	log.Printf("Peer %p disconnected from SHARD\n", peer)
