@@ -48,11 +48,14 @@ func NewShardServer(dbHndlr *db.DBHandler, redisHndlr *redis.RedisHandler, port 
 	}
 
 	server.packetHandlers = map[uint32]PacketHandler{
-		protocol.P_CL2FE_REQ_PC_ENTER:            server.RequestEnter,
-		protocol.P_CL2FE_REQ_PC_LOADING_COMPLETE: server.LoadingComplete,
-		protocol.P_CL2FE_REQ_PC_MOVE:             server.playerMove,
-		protocol.P_CL2FE_REQ_PC_STOP:             server.playerStop,
-		protocol.P_CL2FE_REQ_PC_JUMP:             server.playerJump,
+		protocol.P_CL2FE_REQ_PC_ENTER:              server.RequestEnter,
+		protocol.P_CL2FE_REQ_PC_LOADING_COMPLETE:   server.LoadingComplete,
+		protocol.P_CL2FE_REQ_PC_MOVE:               server.playerMove,
+		protocol.P_CL2FE_REQ_PC_STOP:               server.playerStop,
+		protocol.P_CL2FE_REQ_PC_JUMP:               server.playerJump,
+		protocol.P_CL2FE_REQ_SEND_FREECHAT_MESSAGE: server.freeChat,
+		protocol.P_CL2FE_REQ_SEND_MENUCHAT_MESSAGE: server.menuChat,
+		protocol.P_CL2FE_REQ_PC_AVATAR_EMOTES_CHAT: server.emoteChat,
 	}
 
 	redisHndlr.RegisterShard(redis.ShardMetadata{

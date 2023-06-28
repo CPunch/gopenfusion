@@ -11,6 +11,7 @@ func (server *ShardServer) addEntity(e entity.Entity) {
 }
 
 func (server *ShardServer) removeEntity(e entity.Entity) {
+	// TODO: chunk cleanup
 	pos := e.GetChunk()
 	server.removeEntityFromChunks(server.getViewableChunks(pos), e)
 	server.getChunk(pos).RemoveEntity(e)
