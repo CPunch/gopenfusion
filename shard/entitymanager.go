@@ -46,6 +46,16 @@ func (server *ShardServer) sendOthersPacket(plr *entity.Player, typeID uint32, p
 	return nil
 }
 
+// sends a packet to all peers in the given chunks
+func (server *ShardServer) sendAllPacket(plr *entity.Player, typeID uint32, pkt ...interface{}) error {
+	chunks := server.getViewableChunks(plr.Chunk)
+	for _, chunk := range chunks {
+		chunk.SendPacket(typeID, pkt...)
+	}
+
+	return nil
+}
+
 func (server *ShardServer) removeEntityFromChunks(chunks []*entity.Chunk, this entity.Entity) {
 	for _, chunk := range chunks {
 		for e := range chunk.Entities {
