@@ -105,7 +105,7 @@ func (server *LoginServer) handlePacket(peer *protocol.CNPeer, typeID uint32, pk
 			return err
 		}
 	} else {
-		log.Printf("[WARN] invalid packet ID: %x\n", typeID)
+		log.Printf("[WARN] unknown packet ID: %x\n", typeID)
 	}
 
 	return nil

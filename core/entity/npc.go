@@ -1,6 +1,10 @@
 package entity
 
-import "github.com/CPunch/gopenfusion/core/protocol"
+import (
+	"sync/atomic"
+
+	"github.com/CPunch/gopenfusion/core/protocol"
+)
 
 type NPC struct {
 	ID      int
@@ -12,12 +16,11 @@ type NPC struct {
 	Chunk   ChunkPosition
 }
 
-var nextNPCID = 0
+var nextNPCID = &atomic.Int32{}
 
 func NewNPC(X, Y, Z, Angle int, npcType int) *NPC {
-	nextNPCID++
 	return &NPC{
-		ID:      nextNPCID,
+		ID:      int(nextNPCID.Add(1)),
 		X:       X,
 		Y:       Y,
 		Z:       Z,
