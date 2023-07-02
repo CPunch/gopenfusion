@@ -70,7 +70,7 @@ func (db *DBHandler) FinishPlayer(character *protocol.SP_CL2LS_REQ_CHAR_CREATE, 
 		// update Inventory
 		items := [3]int16{character.SOn_Item.IEquipUBID, character.SOn_Item.IEquipLBID, character.SOn_Item.IEquipFootID}
 		for i := 0; i < len(items); i++ {
-			_, err = tx.Exec("INSERT INTO Inventory (PlayerID, Slot, ID, Type, Opt) VALUES ($1, $2, $3, $4, 1)", character.PCStyle.IPC_UID, i, items[i], i+1)
+			_, err = tx.Exec("INSERT INTO Inventory (PlayerID, Slot, ID, Type, Opt) VALUES ($1, $2, $3, $4, 1)", character.PCStyle.IPC_UID, i+1, items[i], i+1)
 			if err != nil {
 				return err
 			}
