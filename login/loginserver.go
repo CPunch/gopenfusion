@@ -81,20 +81,18 @@ func (server *LoginServer) Start() {
 }
 
 func (server *LoginServer) handleEvents() {
-	for {
-		select {
-		case event := <-server.eRecv:
-			switch event.Type {
-			case protocol.EVENT_CLIENT_DISCONNECT:
-				server.disconnect(event.Peer)
-			case protocol.EVENT_CLIENT_PACKET:
-				defer pool.Put(event.Pkt)
-
-				if err := server.handlePacket(event.Peer, event.PktID, protocol.NewPacket(event.Pkt)); err != nil {
-					log.Printf("Error handling packet: %v", err)
-					event.Peer.Kill()
-				}
+	for event := range server.eRecv {
+		switch event.Type {
+		case protocol.EVENT_CLIENT_DISCONNECT:
+			server.disconnect(event.Peer)
+		case protocol.EVENT_CLIENT_PACKET:
+			if err := server.handlePacket(event.Peer, event.PktID, protocol.NewPacket(event.Pkt)); err != nil {
+				log.Printf("Error handling packet: %v", err)
+				event.Peer.Kill()
 			}
+
+			// the packet is given to us by the event, so we'll need to make sure to return it to the pool
+			pool.Put(event.Pkt)
 		}
 	}
 }

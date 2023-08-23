@@ -76,7 +76,7 @@ func (server *LoginServer) Login(peer *protocol.CNPeer, pkt protocol.Packet) err
 	// client is resending a login packet??
 	if peer.AccountID != -1 {
 		SendError(LOGIN_ERROR)
-		return fmt.Errorf("Out of order P_CL2LS_REQ_LOGIN!")
+		return fmt.Errorf("out of order P_CL2LS_REQ_LOGIN")
 	}
 
 	// attempt login
@@ -155,7 +155,7 @@ func (server *LoginServer) SaveCharacterName(peer *protocol.CNPeer, pkt protocol
 
 	if peer.AccountID == -1 {
 		peer.Send(protocol.P_LS2CL_REP_SAVE_CHAR_NAME_FAIL, protocol.SP_LS2CL_REP_SAVE_CHAR_NAME_FAIL{})
-		return fmt.Errorf("Out of order P_LS2CL_REP_SAVE_CHAR_NAME_FAIL!")
+		return fmt.Errorf("out of order P_LS2CL_REP_SAVE_CHAR_NAME_FAIL")
 	}
 
 	// TODO: sanity check SzFirstName && SzLastName
@@ -260,7 +260,7 @@ func (server *LoginServer) ShardSelect(peer *protocol.CNPeer, pkt protocol.Packe
 	shards := server.redisHndlr.GetShards()
 	if len(shards) == 0 {
 		SendFail(peer)
-		return fmt.Errorf("LoginServer has found no linked shards!")
+		return fmt.Errorf("loginServer has found no linked shards")
 	}
 
 	key, err := protocol.GenSerialKey()
