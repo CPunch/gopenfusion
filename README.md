@@ -13,6 +13,8 @@ $ chmod +x ./build.sh && ./build.sh
 $ docker compose up
 ```
 
+The environment consists of a shard service, login service, redis && postgres containers. redis is used to pass login metadata between the login and shard services, while postgres is just used to store player accounts and characters.
+
 login server is hosted at `127.0.0.1:23000`, just join from your [favorite client](https://github.com/OpenFusionProject/OpenFusion/releases/latest)
 
 ## Generating structures
