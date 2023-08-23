@@ -16,8 +16,6 @@ import (
 
 type PacketHandler func(peer *protocol.CNPeer, pkt protocol.Packet) error
 
-func stubbedPacket(_ *protocol.CNPeer, _ protocol.Packet) error { /* stubbed */ return nil }
-
 type ShardServer struct {
 	listener       net.Listener
 	port           int
@@ -67,18 +65,17 @@ func NewShardServer(dbHndlr *db.DBHandler, redisHndlr *redis.RedisHandler, port 
 }
 
 func (server *ShardServer) handleEvents() {
-	for {
-		select {
-		case event := <-server.eRecv:
-			switch event.Type {
-			case protocol.EVENT_CLIENT_DISCONNECT:
-				server.disconnect(event.Peer)
-			case protocol.EVENT_CLIENT_PACKET:
-				defer pool.Put(event.Pkt)
-				if err := server.handlePacket(event.Peer, event.PktID, protocol.NewPacket(event.Pkt)); err != nil {
-					event.Peer.Kill()
-				}
+	for event := range server.eRecv {
+		switch event.Type {
+		case protocol.EVENT_CLIENT_DISCONNECT:
+			server.disconnect(event.Peer)
+		case protocol.EVENT_CLIENT_PACKET:
+			if err := server.handlePacket(event.Peer, event.PktID, protocol.NewPacket(event.Pkt)); err != nil {
+				event.Peer.Kill()
 			}
+
+			// the packet is given to us by the event, so we'll need to make sure to return it to the pool
+			pool.Put(event.Pkt)
 		}
 	}
 }
@@ -143,7 +140,7 @@ func (server *ShardServer) connect(peer *protocol.CNPeer) {
 func (server *ShardServer) getPlayer(peer *protocol.CNPeer) (*entity.Player, error) {
 	plr, ok := server.peers[peer]
 	if !ok {
-		return nil, fmt.Errorf("Player not found")
+		return nil, fmt.Errorf("player not found")
 	}
 
 	return plr, nil

@@ -31,7 +31,7 @@ func (pkt Packet) encodeStructField(field reflect.StructField, value reflect.Val
 	case reflect.String: // all strings in fusionfall packets are encoded as utf16, we'll need to encode it
 		sz, err := strconv.Atoi(field.Tag.Get("size"))
 		if err != nil {
-			return fmt.Errorf("Failed to grab string 'size' tag!!")
+			return fmt.Errorf("failed to grab string 'size' tag")
 		}
 
 		buf16 := utf16.Encode([]rune(value.String()))
@@ -100,7 +100,7 @@ func (pkt Packet) decodeStructField(field reflect.StructField, value reflect.Val
 	case reflect.String: // all strings in fusionfall packets are encoded as utf16, we'll need to decode it
 		sz, err := strconv.Atoi(field.Tag.Get("size"))
 		if err != nil {
-			return fmt.Errorf("Failed to grab string 'size' tag!!")
+			return fmt.Errorf("failed to grab string 'size' tag")
 		}
 
 		buf16 := make([]uint16, sz)

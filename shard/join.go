@@ -11,9 +11,9 @@ import (
 
 func (server *ShardServer) attachPlayer(peer *protocol.CNPeer, meta redis.LoginMetadata) (*entity.Player, error) {
 	// resending a shard enter packet?
-	old, err := server.getPlayer(peer)
+	old, _ := server.getPlayer(peer)
 	if old != nil {
-		return nil, fmt.Errorf("resent enter packet!")
+		return nil, fmt.Errorf("resent enter packet")
 	}
 
 	// attach player
