@@ -51,6 +51,9 @@ func (peer *CNPeer) Send(typeID uint32, data ...interface{}) error {
 	buf := pool.Get()
 	defer pool.Put(buf)
 
+	// allocate space for packet size
+	buf.Write(make([]byte, 4))
+
 	// body start
 	pkt := NewPacket(buf)
 
@@ -66,25 +69,22 @@ func (peer *CNPeer) Send(typeID uint32, data ...interface{}) error {
 		}
 	}
 
+	// prepend the packet size
+	binary.LittleEndian.PutUint32(buf.Bytes()[:4], uint32(buf.Len()-4))
+
 	// encrypt body
 	switch peer.whichKey {
 	case USE_E:
-		EncryptData(buf.Bytes(), peer.E_key)
+		EncryptData(buf.Bytes()[4:], peer.E_key)
 	case USE_FE:
-		EncryptData(buf.Bytes(), peer.FE_key)
+		EncryptData(buf.Bytes()[4:], peer.FE_key)
 	}
 
-	// write packet size
-	if err := binary.Write(peer.conn, binary.LittleEndian, uint32(buf.Len())); err != nil {
-		return err
-	}
-
-	// write packet body
-	log.Printf("Sending %#v, sizeof: %d", data, buf.Len())
+	// send full packet
+	log.Printf("Sending %#v, sizeof: %d, buffer: %v", data, buf.Len(), buf.Bytes())
 	if _, err := peer.conn.Write(buf.Bytes()); err != nil {
-		return fmt.Errorf("[FATAL] failed to write packet body! %v", err)
+		return fmt.Errorf("failed to write packet body! %v", err)
 	}
-
 	return nil
 }
 
