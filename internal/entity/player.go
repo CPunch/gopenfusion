@@ -2,7 +2,7 @@ package entity
 
 import (
 	"github.com/CPunch/gopenfusion/config"
-	"github.com/CPunch/gopenfusion/core/protocol"
+	"github.com/CPunch/gopenfusion/internal/protocol"
 )
 
 type Player struct {

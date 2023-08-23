@@ -4,8 +4,8 @@ import (
 	"database/sql"
 
 	"github.com/CPunch/gopenfusion/config"
-	"github.com/CPunch/gopenfusion/core/entity"
-	"github.com/CPunch/gopenfusion/core/protocol"
+	"github.com/CPunch/gopenfusion/internal/entity"
+	"github.com/CPunch/gopenfusion/internal/protocol"
 	"github.com/blockloop/scan"
 )
 

@@ -8,7 +8,7 @@ import (
 	"net"
 	"time"
 
-	"github.com/CPunch/gopenfusion/core/protocol/pool"
+	"github.com/CPunch/gopenfusion/internal/protocol/pool"
 )
 
 const (

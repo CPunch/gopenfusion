@@ -1,8 +1,8 @@
 package shard
 
 import (
-	"github.com/CPunch/gopenfusion/core/entity"
-	"github.com/CPunch/gopenfusion/core/protocol"
+	"github.com/CPunch/gopenfusion/internal/entity"
+	"github.com/CPunch/gopenfusion/internal/protocol"
 )
 
 func (server *ShardServer) updatePlayerPosition(plr *entity.Player, X, Y, Z, Angle int) {

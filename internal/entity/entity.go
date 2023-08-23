@@ -1,6 +1,6 @@
 package entity
 
-import "github.com/CPunch/gopenfusion/core/protocol"
+import "github.com/CPunch/gopenfusion/internal/protocol"
 
 type EntityKind int
 

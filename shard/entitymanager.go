@@ -1,7 +1,7 @@
 package shard
 
 import (
-	"github.com/CPunch/gopenfusion/core/entity"
+	"github.com/CPunch/gopenfusion/internal/entity"
 )
 
 func (server *ShardServer) addEntity(e entity.Entity) {

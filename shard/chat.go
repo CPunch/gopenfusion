@@ -1,6 +1,6 @@
 package shard
 
-import "github.com/CPunch/gopenfusion/core/protocol"
+import "github.com/CPunch/gopenfusion/internal/protocol"
 
 func (server *ShardServer) freeChat(peer *protocol.CNPeer, pkt protocol.Packet) error {
 	var chat protocol.SP_CL2FE_REQ_SEND_FREECHAT_MESSAGE

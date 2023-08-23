@@ -7,11 +7,11 @@ import (
 	"sync"
 
 	"github.com/CPunch/gopenfusion/config"
-	"github.com/CPunch/gopenfusion/core/db"
-	"github.com/CPunch/gopenfusion/core/entity"
-	"github.com/CPunch/gopenfusion/core/protocol"
-	"github.com/CPunch/gopenfusion/core/protocol/pool"
-	"github.com/CPunch/gopenfusion/core/redis"
+	"github.com/CPunch/gopenfusion/internal/db"
+	"github.com/CPunch/gopenfusion/internal/entity"
+	"github.com/CPunch/gopenfusion/internal/protocol"
+	"github.com/CPunch/gopenfusion/internal/protocol/pool"
+	"github.com/CPunch/gopenfusion/internal/redis"
 )
 
 type PacketHandler func(peer *protocol.CNPeer, pkt protocol.Packet) error

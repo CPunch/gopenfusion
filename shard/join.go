@@ -4,9 +4,9 @@ import (
 	"fmt"
 	"log"
 
-	"github.com/CPunch/gopenfusion/core/entity"
-	"github.com/CPunch/gopenfusion/core/protocol"
-	"github.com/CPunch/gopenfusion/core/redis"
+	"github.com/CPunch/gopenfusion/internal/entity"
+	"github.com/CPunch/gopenfusion/internal/protocol"
+	"github.com/CPunch/gopenfusion/internal/redis"
 )
 
 func (server *ShardServer) attachPlayer(peer *protocol.CNPeer, meta redis.LoginMetadata) (*entity.Player, error) {

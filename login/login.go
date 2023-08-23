@@ -7,9 +7,9 @@ import (
 	"math/rand"
 
 	"github.com/CPunch/gopenfusion/config"
-	"github.com/CPunch/gopenfusion/core/db"
-	"github.com/CPunch/gopenfusion/core/protocol"
-	"github.com/CPunch/gopenfusion/core/redis"
+	"github.com/CPunch/gopenfusion/internal/db"
+	"github.com/CPunch/gopenfusion/internal/protocol"
+	"github.com/CPunch/gopenfusion/internal/redis"
 )
 
 const (

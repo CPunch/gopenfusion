@@ -3,7 +3,7 @@ package entity
 import (
 	"sync/atomic"
 
-	"github.com/CPunch/gopenfusion/core/protocol"
+	"github.com/CPunch/gopenfusion/internal/protocol"
 )
 
 type NPC struct {
