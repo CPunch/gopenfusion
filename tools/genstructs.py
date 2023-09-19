@@ -368,6 +368,13 @@ if __name__ == '__main__':
         source += "\t%s = 0x%x\n" % (const.name, const.value)
     source += ")\n\n"
 
+    source += "func PacketIDToString(id uint32) string {\n"
+    source += "\tswitch id {\n"
+    for const in consts:
+        if const.name.startswith("P_"):
+            source += "\tcase %s:\n\t\treturn \"%s\"\n" % (const.name, const.name)
+    source += "\t}\n\treturn \"UNKNOWN\"\n}\n\n"
+
     for struct in structs:
         source += struct.toGoStyle() + "\n"
     print(source)
