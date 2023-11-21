@@ -58,9 +58,9 @@ func (server *ShardServer) sendAllPacket(plr *entity.Player, typeID uint32, pkt 
 
 func (server *ShardServer) removeEntityFromChunks(this entity.Entity, chunks []*entity.Chunk) {
 	for _, chunk := range chunks {
-		for e := range chunk.Entities {
+		chunk.ForEachEntity(func(e entity.Entity) bool {
 			if e == this {
-				continue
+				return false
 			}
 
 			// notify other players we're leaving
@@ -74,15 +74,17 @@ func (server *ShardServer) removeEntityFromChunks(this entity.Entity, chunks []*
 				thisPlr := this.(*entity.Player)
 				e.DisappearFromViewOf(thisPlr.Peer)
 			}
-		}
+
+			return false
+		})
 	}
 }
 
 func (server *ShardServer) addEntityToChunks(this entity.Entity, chunks []*entity.Chunk) {
 	for _, chunk := range chunks {
-		for e := range chunk.Entities {
+		chunk.ForEachEntity(func(e entity.Entity) bool {
 			if e == this {
-				continue
+				return false
 			}
 
 			// notify other players we're entering
@@ -96,7 +98,9 @@ func (server *ShardServer) addEntityToChunks(this entity.Entity, chunks []*entit
 				thisPlr := this.(*entity.Player)
 				e.EnterIntoViewOf(thisPlr.Peer)
 			}
-		}
+
+			return false
+		})
 	}
 }
 

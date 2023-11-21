@@ -7,23 +7,29 @@ import (
 
 type Chunk struct {
 	Position ChunkPosition
-	Entities map[Entity]struct{}
+	entities map[Entity]struct{}
 	lock     sync.Mutex
 }
 
 func NewChunk(position ChunkPosition) *Chunk {
 	return &Chunk{
 		Position: position,
-		Entities: make(map[Entity]struct{}),
+		entities: make(map[Entity]struct{}),
 	}
 }
 
 func (c *Chunk) AddEntity(entity Entity) {
-	c.Entities[entity] = struct{}{}
+	c.lock.Lock()
+	defer c.lock.Unlock()
+
+	c.entities[entity] = struct{}{}
 }
 
 func (c *Chunk) RemoveEntity(entity Entity) {
-	delete(c.Entities, entity)
+	c.lock.Lock()
+	defer c.lock.Unlock()
+
+	delete(c.entities, entity)
 }
 
 // send packet to all peers in this chunk and kill each peer if error
@@ -31,14 +37,23 @@ func (c *Chunk) SendPacket(typeID uint32, pkt ...interface{}) {
 	c.SendPacketExclude(nil, typeID, pkt...)
 }
 
-func (c *Chunk) SendPacketExclude(exclude Entity, typeID uint32, pkt ...interface{}) {
+// calls f for each entity in this chunk, if f returns true, stop iterating
+func (c *Chunk) ForEachEntity(f func(entity Entity) bool) {
 	c.lock.Lock()
 	defer c.lock.Unlock()
 
-	for entity := range c.Entities {
+	for entity := range c.entities {
+		if f(entity) {
+			break
+		}
+	}
+}
+
+func (c *Chunk) SendPacketExclude(exclude Entity, typeID uint32, pkt ...interface{}) {
+	c.ForEachEntity(func(entity Entity) bool {
 		// only send to players, and exclude the player that sent the packet
 		if entity.GetKind() != ENTITY_KIND_PLAYER || entity == exclude {
-			continue
+			return false
 		}
 
 		plr, ok := entity.(*Player)
@@ -51,7 +66,9 @@ func (c *Chunk) SendPacketExclude(exclude Entity, typeID uint32, pkt ...interfac
 			log.Printf("Error sending packet to peer %p: %v", peer, err)
 			peer.Kill()
 		}
-	}
+
+		return false
+	})
 }
 
 func (c *Chunk) GetAdjacentPositions() []ChunkPosition {
