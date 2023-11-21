@@ -5,15 +5,15 @@ import (
 )
 
 func (server *ShardServer) addEntity(e entity.Entity) {
-	pos := e.GetChunk()
-	server.addEntityToChunks(server.getViewableChunks(pos), e)
+	pos := e.GetChunkPos()
+	server.addEntityToChunks(e, server.getViewableChunks(pos))
 	server.getChunk(pos).AddEntity(e)
 }
 
 func (server *ShardServer) removeEntity(e entity.Entity) {
 	// TODO: chunk cleanup
-	pos := e.GetChunk()
-	server.removeEntityFromChunks(server.getViewableChunks(pos), e)
+	pos := e.GetChunkPos()
+	server.removeEntityFromChunks(e, server.getViewableChunks(pos))
 	server.getChunk(pos).RemoveEntity(e)
 }
 
@@ -56,7 +56,7 @@ func (server *ShardServer) sendAllPacket(plr *entity.Player, typeID uint32, pkt 
 	return nil
 }
 
-func (server *ShardServer) removeEntityFromChunks(chunks []*entity.Chunk, this entity.Entity) {
+func (server *ShardServer) removeEntityFromChunks(this entity.Entity, chunks []*entity.Chunk) {
 	for _, chunk := range chunks {
 		for e := range chunk.Entities {
 			if e == this {
@@ -78,7 +78,7 @@ func (server *ShardServer) removeEntityFromChunks(chunks []*entity.Chunk, this e
 	}
 }
 
-func (server *ShardServer) addEntityToChunks(chunks []*entity.Chunk, this entity.Entity) {
+func (server *ShardServer) addEntityToChunks(this entity.Entity, chunks []*entity.Chunk) {
 	for _, chunk := range chunks {
 		for e := range chunk.Entities {
 			if e == this {
@@ -114,9 +114,9 @@ func (server *ShardServer) updateEntityChunk(e entity.Entity, from entity.ChunkP
 	toEnter := entity.ChunkSliceDifference(newViewables, oldViewables)
 
 	// update chunks
-	server.removeEntityFromChunks(toExit, e)
-	server.addEntityToChunks(toEnter, e)
+	server.removeEntityFromChunks(e, toExit)
+	server.addEntityToChunks(e, toEnter)
 	server.getChunk(from).RemoveEntity(e)
 	server.getChunk(to).AddEntity(e)
-	e.SetChunk(to)
+	e.SetChunkPos(to)
 }

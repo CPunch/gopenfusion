@@ -44,7 +44,7 @@ func (plr *Player) GetKind() EntityKind {
 	return ENTITY_KIND_PLAYER
 }
 
-func (plr *Player) GetChunk() ChunkPosition {
+func (plr *Player) GetChunkPos() ChunkPosition {
 	return plr.Chunk
 }
 
@@ -56,7 +56,7 @@ func (plr *Player) GetAngle() int {
 	return plr.Angle
 }
 
-func (plr *Player) SetChunk(chunk ChunkPosition) {
+func (plr *Player) SetChunkPos(chunk ChunkPosition) {
 	plr.Chunk = chunk
 }
 

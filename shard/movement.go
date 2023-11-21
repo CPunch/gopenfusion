@@ -10,7 +10,7 @@ func (server *ShardServer) updatePlayerPosition(plr *entity.Player, X, Y, Z, Ang
 	plr.Y = Y
 	plr.Z = Z
 	plr.Angle = Angle
-	server.updateEntityChunk(plr, plr.GetChunk(), entity.MakeChunkPosition(X, Y))
+	server.updateEntityChunk(plr, plr.GetChunkPos(), entity.MakeChunkPosition(X, Y))
 }
 
 func (server *ShardServer) playerMove(peer *protocol.CNPeer, pkt protocol.Packet) error {

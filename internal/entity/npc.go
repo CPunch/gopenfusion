@@ -36,7 +36,7 @@ func (npc *NPC) GetKind() EntityKind {
 	return ENTITY_KIND_NPC
 }
 
-func (npc *NPC) GetChunk() ChunkPosition {
+func (npc *NPC) GetChunkPos() ChunkPosition {
 	return npc.Chunk
 }
 
@@ -48,7 +48,7 @@ func (npc *NPC) GetAngle() int {
 	return npc.Angle
 }
 
-func (npc *NPC) SetChunk(chunk ChunkPosition) {
+func (npc *NPC) SetChunkPos(chunk ChunkPosition) {
 	npc.Chunk = chunk
 }
 
