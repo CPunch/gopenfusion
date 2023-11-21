@@ -21,15 +21,18 @@ type DBHandler struct {
 //go:embed migrations/new.sql
 var createDBQuery string
 
-func OpenPostgresDB(dbAddr string) (*DBHandler, error) {
-	fmt := fmt.Sprintf("postgresql://%s:%s@%s/%s?sslmode=disable", config.GetDBUser(), config.GetDBPass(), dbAddr, config.GetDBName())
-
-	db, err := sql.Open("postgres", fmt)
+func OpenFromConnectionString(driverName, connectionString string) (*DBHandler, error) {
+	db, err := sql.Open(driverName, connectionString)
 	if err != nil {
 		return nil, err
 	}
 
 	return &DBHandler{db}, nil
+}
+
+func OpenPostgresDB(dbAddr string) (*DBHandler, error) {
+	fmt := fmt.Sprintf("postgresql://%s:%s@%s/%s?sslmode=disable", config.GetDBUser(), config.GetDBPass(), dbAddr, config.GetDBName())
+	return OpenFromConnectionString("postgres", fmt)
 }
 
 func (db *DBHandler) Query(query string, args ...any) (*sql.Rows, error) {

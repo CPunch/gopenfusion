@@ -44,8 +44,8 @@ func (db *DBHandler) NewAccount(Login, Password string) (*Account, error) {
 }
 
 var (
-	LoginErrorInvalidID       = fmt.Errorf("Invalid Login ID!")
-	LoginErrorInvalidPassword = fmt.Errorf("Invalid ID && Password combo!")
+	ErrLoginInvalidID       = fmt.Errorf("invalid Login ID")
+	ErrLoginInvalidPassword = fmt.Errorf("invalid ID && Password combo")
 )
 
 func (db *DBHandler) TryLogin(Login, Password string) (*Account, error) {
@@ -58,11 +58,11 @@ func (db *DBHandler) TryLogin(Login, Password string) (*Account, error) {
 	row.Next()
 	if err := sqlscan.ScanRow(&account, row); err != nil {
 		log.Printf("Error scanning row: %v", err)
-		return nil, LoginErrorInvalidID
+		return nil, ErrLoginInvalidID
 	}
 
 	if bcrypt.CompareHashAndPassword([]byte(account.Password), []byte(Password)) != nil {
-		return nil, LoginErrorInvalidPassword
+		return nil, ErrLoginInvalidPassword
 	}
 
 	// else, login was a success
