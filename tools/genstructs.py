@@ -32,10 +32,10 @@ WARN_INVALID = False
 
 class StructTranspiler:
     class StructField:
-        def __init__(self, name: str, type: str, marshal: str) -> None:
+        def __init__(self, name: str, csType: str, marshal: str) -> None:
             self.marshal = marshal
-            self.type = type
-            self.ctype = type # for transpilation to c
+            self.type = csType
+            self.ctype = csType # for transpilation to c
             self.tags = ""
             self.size = 0
             self.padding = 0
@@ -43,87 +43,88 @@ class StructTranspiler:
             self.cname = self.name
             self.needsPatching = False
 
-            if type == "byte":
-                self.type = "uint8"
-                self.ctype = "char"
-                self.size = 1
-            elif type == "sbyte":
-                self.type = "int8"
-                self.ctype = "char"
-                self.size = 1
-            elif type == "short":
-                self.type = "int16"
-                self.ctype = "short"
-                self.size = 2
-            elif type == "int":
-                self.type = "int32"
-                self.ctype = "int"
-                self.size = 4
-            elif type == "uint":
-                self.type = "uint32"
-                self.ctype = "int"
-                self.size = 4
-            elif type == "float":
-                self.type = "float32"
-                self.ctype = "float"
-                self.size = 4
-            elif type == "long":
-                self.type = "int64"
-                self.ctype = "long"
-                self.size = 8
-            elif type == "ulong":
-                self.type = "uint64"
-                self.ctype = "long"
-                self.size = 8
-            elif type == "byte[]":
-                self.size = int(marshal[(marshal.find("SizeConst = ") + len("SizeConst = ")):marshal.find(")]")])
-                self.type = "[%d]byte" % self.size
-                self.ctype = "char"
-                self.cname += "[%d]" % self.size
-            elif type == "short[]":
-                self.size = int(marshal[(marshal.find("SizeConst = ") + len("SizeConst = ")):marshal.find(")]")])
-                self.type = "[%d]int16" % self.size
-                self.ctype = "short"
-                self.cname += "[%d]" % self.size
-                self.size *= 2
-            elif type == "string":
-                # all strings in fusionfall are utf16, in a uint16 array
-                self.size = int(marshal[(marshal.find("SizeConst = ") + len("SizeConst = ")):marshal.find(")]")])
-                self.type = "string"
-                self.addTag("size:\"%d\"" % self.size) # special tag to tell our decoder/encoder the size of the uint16[] array
-                self.ctype = "short"
-                self.cname += "[%d]" % self.size
-                self.size *= 2
-            elif type == "int[]":
-                self.size = int(marshal[(marshal.find("SizeConst = ") + len("SizeConst = ")):marshal.find(")]")])
-                self.type = "[%d]int32" % self.size
-                self.ctype = "int"
-                self.cname += "[%d]" % self.size
-                self.size *= 4
-            elif type == "float[]":
-                self.size = int(marshal[(marshal.find("SizeConst = ") + len("SizeConst = ")):marshal.find(")]")])
-                self.type = "[%d]float32" % self.size
-                self.ctype = "float"
-                self.cname += "[%d]" % self.size
-                self.size *= 4
-            elif type == "long[]":
-                self.size = int(marshal[(marshal.find("SizeConst = ") + len("SizeConst = ")):marshal.find(")]")])
-                self.type = "[%d]int64" % self.size
-                self.ctype = "long"
-                self.cname += "[%d]" % self.size
-                self.size *= 8
-            else:
-                # assume it's a structure that will be defined later
-                if type.find("[]") != -1: # it's an array!
-                    type = type.replace("[]", "")
-                    self.size = int(marshal[(marshal.find("SizeConst = ") + len("SizeConst = ")):marshal.find(")]")])
-                    self.cname = self.name + "[%d]" % self.size
-                else:
-                    self.cname = self.name
+            match csType:
+                case "byte":
+                    self.type = "uint8"
+                    self.ctype = "char"
                     self.size = 1
-                self.type = sanitizeName(type)
-                self.ctype = sanitizeName(type)
-                self.needsPatching = True
+                case "sbyte":
+                    self.type = "int8"
+                    self.ctype = "char"
+                    self.size = 1
+                case "short":
+                    self.type = "int16"
+                    self.ctype = "short"
+                    self.size = 2
+                case "int":
+                    self.type = "int32"
+                    self.ctype = "int"
+                    self.size = 4
+                case "uint":
+                    self.type = "uint32"
+                    self.ctype = "int"
+                    self.size = 4
+                case "float":
+                    self.type = "float32"
+                    self.ctype = "float"
+                    self.size = 4
+                case "long":
+                    self.type = "int64"
+                    self.ctype = "long"
+                    self.size = 8
+                case "ulong":
+                    self.type = "uint64"
+                    self.ctype = "long"
+                    self.size = 8
+                case "byte[]":
+                    self.size = int(marshal[(marshal.find("SizeConst = ") + len("SizeConst = ")):marshal.find(")]")])
+                    self.type = "[%d]byte" % self.size
+                    self.ctype = "char"
+                    self.cname += "[%d]" % self.size
+                case "short[]":
+                    self.size = int(marshal[(marshal.find("SizeConst = ") + len("SizeConst = ")):marshal.find(")]")])
+                    self.type = "[%d]int16" % self.size
+                    self.ctype = "short"
+                    self.cname += "[%d]" % self.size
+                    self.size *= 2
+                case "string":
+                    # all strings in fusionfall are utf16, in a uint16 array
+                    self.size = int(marshal[(marshal.find("SizeConst = ") + len("SizeConst = ")):marshal.find(")]")])
+                    self.type = "string"
+                    self.addTag("size:\"%d\"" % self.size) # special tag to tell our decoder/encoder the size of the uint16[] array
+                    self.ctype = "short"
+                    self.cname += "[%d]" % self.size
+                    self.size *= 2
+                case "int[]":
+                    self.size = int(marshal[(marshal.find("SizeConst = ") + len("SizeConst = ")):marshal.find(")]")])
+                    self.type = "[%d]int32" % self.size
+                    self.ctype = "int"
+                    self.cname += "[%d]" % self.size
+                    self.size *= 4
+                case "float[]":
+                    self.size = int(marshal[(marshal.find("SizeConst = ") + len("SizeConst = ")):marshal.find(")]")])
+                    self.type = "[%d]float32" % self.size
+                    self.ctype = "float"
+                    self.cname += "[%d]" % self.size
+                    self.size *= 4
+                case "long[]":
+                    self.size = int(marshal[(marshal.find("SizeConst = ") + len("SizeConst = ")):marshal.find(")]")])
+                    self.type = "[%d]int64" % self.size
+                    self.ctype = "long"
+                    self.cname += "[%d]" % self.size
+                    self.size *= 8
+                case _:
+                    # assume it's a structure that will be defined later
+                    if csType.find("[]") != -1: # it's an array!
+                        csType = csType.replace("[]", "")
+                        self.size = int(marshal[(marshal.find("SizeConst = ") + len("SizeConst = ")):marshal.find(")]")])
+                        self.cname = self.name + "[%d]" % self.size
+                    else:
+                        self.cname = self.name
+                        self.size = 1
+                    self.type = sanitizeName(csType)
+                    self.ctype = sanitizeName(csType)
+                    self.needsPatching = True
 
         def addTag(self, tag: str) -> None:
             if len(self.tags) > 0: # if there's already a tag defined, make sure there's a space separating them
