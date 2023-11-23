@@ -61,10 +61,9 @@ func (pkt Packet) encodeStructField(field reflect.StructField, value reflect.Val
 	// write padding bytes
 	pad, err := strconv.Atoi(field.Tag.Get("pad"))
 	if err == nil {
-		for i := 0; i < pad; i++ {
-			if _, err := pkt.readWriter.Write([]byte{0}); err != nil {
-				return err
-			}
+		dummy := make([]byte, pad)
+		if _, err := pkt.readWriter.Write(dummy); err != nil {
+			return err
 		}
 	}
 
@@ -126,10 +125,9 @@ func (pkt Packet) decodeStructField(field reflect.StructField, value reflect.Val
 	// consume padding bytes
 	pad, err := strconv.Atoi(field.Tag.Get("pad"))
 	if err == nil {
-		for i := 0; i < pad; i++ {
-			if _, err := pkt.readWriter.Read([]byte{0}); err != nil {
-				return err
-			}
+		dummy := make([]byte, pad)
+		if _, err := pkt.readWriter.Read(dummy); err != nil {
+			return err
 		}
 	}
 
