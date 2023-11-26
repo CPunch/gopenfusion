@@ -16,14 +16,14 @@ type TestPacketData struct {
 }
 
 var (
-	// this is the data we expect to get from encoding the above struct with:
-	//
-	//	Encode(TestPacketData{
-	//		A:        1,
-	//		B:        2,
-	//		UTF16Str: "hello world",
-	//		C:        3,
-	//	})
+	testStruct = TestPacketData{
+		A:        1,
+		B:        2,
+		UTF16Str: "hello world",
+		C:        3,
+	}
+
+	// this is the data we expect to get from encoding the above struct
 	testData = [...]byte{
 		0x01, 0x00, 0x00, 0x00, 0x02, 0x00, 0x00, 0x00,
 		0x68, 0x00, 0x65, 0x00, 0x6c, 0x00, 0x6c, 0x00,
@@ -52,30 +52,31 @@ var (
 	}
 )
 
-func TestPacketEncodeDecode(t *testing.T) {
-	buf := &bytes.Buffer{}
+func TestPacketEncode(t *testing.T) {
+	buf := bytes.NewBuffer(nil)
 	pkt := protocol.NewPacket(buf)
 
-	if err := pkt.Encode(TestPacketData{
-		A:        1,
-		B:        2,
-		UTF16Str: "hello world",
-		C:        3,
-	}); err != nil {
+	if err := pkt.Encode(testStruct); err != nil {
 		t.Error(err)
 	}
 
 	if !bytes.Equal(buf.Bytes(), testData[:]) {
 		t.Error("packet data does not match!")
 	}
+}
+
+func TestPacketDecode(t *testing.T) {
+	buf := bytes.NewBuffer(nil)
+	pkt := protocol.NewPacket(buf)
+	buf.Write(testData[:])
 
 	var test TestPacketData
 	if err := pkt.Decode(&test); err != nil {
 		t.Error(err)
 	}
 
-	if test.A != 1 || test.B != 2 || test.C != 3 || test.UTF16Str != "hello world" {
-		t.Error("decoded packet data does not match!")
+	if test != testStruct {
+		t.Error("packet data does not match!")
 	}
 }
 
