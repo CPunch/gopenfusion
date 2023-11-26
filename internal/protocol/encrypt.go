@@ -49,7 +49,7 @@ func DecryptData(buff, key []byte) {
 	xorData(buff, key, size)
 }
 
-func CreateNewKey(uTime uint64, iv1, iv2 uint64) []byte {
+func CreateNewKey(uTime, iv1, iv2 uint64) []byte {
 	num := iv1 + 1
 	num2 := iv2 + 1
 
