@@ -1,16 +1,17 @@
-package db
+package db_test
 
 import (
 	"context"
 	"os"
 	"testing"
 
+	"github.com/CPunch/gopenfusion/internal/db"
 	"github.com/CPunch/gopenfusion/internal/protocol"
 	"github.com/bitcomplete/sqltestutil"
 )
 
 var (
-	testDB *DBHandler
+	testDB *db.DBHandler
 )
 
 func TestMain(m *testing.M) {
@@ -21,7 +22,7 @@ func TestMain(m *testing.M) {
 	}
 	defer psql.Shutdown(ctx)
 
-	testDB, err = OpenFromConnectionString("postgres", psql.ConnectionString()+"?sslmode=disable")
+	testDB, err = db.OpenFromConnectionString("postgres", psql.ConnectionString()+"?sslmode=disable")
 	if err != nil {
 		panic(err)
 	}
@@ -49,7 +50,7 @@ func TestDBAccount(t *testing.T) {
 		t.Error("account username is not test")
 	}
 
-	if _, err = testDB.TryLogin("test", "wrongpassword"); err != ErrLoginInvalidPassword {
+	if _, err = testDB.TryLogin("test", "wrongpassword"); err != db.ErrLoginInvalidPassword {
 		t.Error("expected ErrLoginInvalidPassword")
 	}
 }
