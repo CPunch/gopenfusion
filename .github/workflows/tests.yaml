@@ -3,7 +3,11 @@ name: unit-tests
 on:
   push:
     paths:
-      - ./**.go
+      - cmd/**
+      - config/**
+      - internal/**
+      - login/**
+      - shard/**
       - go.mod
       - go.sum
       - .github/workflows/tests.yaml
