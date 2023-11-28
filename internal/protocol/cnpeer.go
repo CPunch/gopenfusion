@@ -98,10 +98,9 @@ func (peer *CNPeer) SetActiveKey(whichKey int) {
 func (peer *CNPeer) Kill() {
 	log.Printf("Killing peer %p", peer)
 
-	if !peer.alive.Load() {
+	if !peer.alive.CompareAndSwap(true, false) {
 		return
 	}
-	peer.alive.Store(false)
 
 	peer.conn.Close()
 	peer.eRecv <- &Event{Type: EVENT_CLIENT_DISCONNECT, Peer: peer}
