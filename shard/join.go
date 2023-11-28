@@ -10,26 +10,28 @@ import (
 )
 
 func (server *ShardServer) attachPlayer(peer *protocol.CNPeer, meta redis.LoginMetadata) (*entity.Player, error) {
-	// resending a shard enter packet?
-	old, _ := server.getPlayer(peer)
-	if old != nil {
-		return nil, fmt.Errorf("resent enter packet")
-	}
-
-	// attach player
-	plr, err := server.dbHndlr.GetPlayer(int(meta.PlayerID))
+	dbPlr, err := server.dbHndlr.GetPlayer(int(meta.PlayerID))
 	if err != nil {
 		return nil, err
 	}
-	plr.Peer = peer
+	plr := entity.NewPlayer(peer, dbPlr)
 
-	server.setPlayer(peer, plr)
+	// once we create the player, it's memory address is owned by the
+	// server.Start() goroutine. the only functions allowed to access
+	// it are the packet handlers as no other goroutines will be
+	// concurrently accessing it.
+	server.service.SetPeerData(peer, plr)
 	return plr, nil
 }
 
-func (server *ShardServer) RequestEnter(peer *protocol.CNPeer, pkt protocol.Packet) error {
+func (server *ShardServer) RequestEnter(peer *protocol.CNPeer, _plr interface{}, pkt protocol.Packet) error {
 	var enter protocol.SP_CL2FE_REQ_PC_ENTER
 	pkt.Decode(&enter)
+
+	// resending a shard enter packet?
+	if _plr != nil {
+		return fmt.Errorf("resent enter packet")
+	}
 
 	loginData, err := server.redisHndlr.GetLogin(enter.IEnterSerialKey)
 	if err != nil {
@@ -52,29 +54,35 @@ func (server *ShardServer) RequestEnter(peer *protocol.CNPeer, pkt protocol.Pack
 	// setup peer
 	peer.E_key = protocol.CreateNewKey(resp.UiSvrTime, uint64(resp.IID+1), uint64(resp.PCLoadData2CL.IFusionMatter+1))
 	peer.FE_key = loginData.FEKey
-	peer.PlayerID = loginData.PlayerID
-	peer.AccountID = loginData.AccountID
 	peer.SetActiveKey(protocol.USE_FE)
 
 	log.Printf("Player %d (AccountID %d) entered\n", resp.IID, loginData.AccountID)
-
 	if err := peer.Send(protocol.P_FE2CL_REP_PC_ENTER_SUCC, resp); err != nil {
 		return err
 	}
 
-	// we send the chunk updates (PC_NEW, NPC_NEW, etc.) after the enter packet
-	server.updatePlayerPosition(plr, int(plr.X), int(plr.Y), int(plr.Z), int(plr.Angle))
 	return nil
 }
 
-func (server *ShardServer) LoadingComplete(peer *protocol.CNPeer, pkt protocol.Packet) error {
+func (server *ShardServer) LoadingComplete(peer *protocol.CNPeer, _plr interface{}, pkt protocol.Packet) error {
 	var loadComplete protocol.SP_CL2FE_REQ_PC_LOADING_COMPLETE
 	pkt.Decode(&loadComplete)
 
-	plr, err := server.getPlayer(peer)
+	// was the peer attached to a player?
+	if _plr == nil {
+		return fmt.Errorf("loadingComplete: plr is nil")
+	}
+	plr := _plr.(*entity.Player)
+
+	err := peer.Send(protocol.P_FE2CL_REP_PC_LOADING_COMPLETE_SUCC, protocol.SP_FE2CL_REP_PC_LOADING_COMPLETE_SUCC{IPC_ID: int32(plr.PlayerID)})
 	if err != nil {
 		return err
 	}
 
-	return peer.Send(protocol.P_FE2CL_REP_PC_LOADING_COMPLETE_SUCC, protocol.SP_FE2CL_REP_PC_LOADING_COMPLETE_SUCC{IPC_ID: int32(plr.PlayerID)})
+	// we send the chunk updates (PC_NEW, NPC_NEW, etc.) after the enter packet
+	chunkPos := entity.MakeChunkPosition(plr.X, plr.Y)
+	viewableChunks := server.getViewableChunks(chunkPos)
+	plr.SetChunkPos(chunkPos)
+	server.addEntityToChunks(plr, viewableChunks)
+	return nil
 }

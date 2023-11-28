@@ -4,10 +4,40 @@ import (
 	"database/sql"
 
 	"github.com/CPunch/gopenfusion/config"
-	"github.com/CPunch/gopenfusion/internal/entity"
 	"github.com/CPunch/gopenfusion/internal/protocol"
 	"github.com/blockloop/scan"
 )
+
+type Player struct {
+	PlayerID           int
+	AccountID          int
+	AccountLevel       int
+	Slot               int
+	PCStyle            protocol.SPCStyle
+	PCStyle2           protocol.SPCStyle2
+	EquippedNanos      [3]int
+	Nanos              [config.NANO_COUNT]protocol.SNano
+	Equip              [config.AEQUIP_COUNT]protocol.SItemBase
+	Inven              [config.AINVEN_COUNT]protocol.SItemBase
+	Bank               [config.ABANK_COUNT]protocol.SItemBase
+	SkywayLocationFlag []byte
+	FirstUseFlag       []byte
+	Quests             []byte
+	HP                 int
+	Level              int
+	Taros              int
+	FusionMatter       int
+	Mentor             int
+	X, Y, Z            int
+	Angle              int
+	BatteryN           int
+	BatteryW           int
+	WarpLocationFlag   int
+	ActiveNanoSlotNum  int
+	Fatigue            int
+	CurrentMissionID   int
+	IPCState           int8
+}
 
 // returns PlayerID, error
 func (db *DBHandler) NewPlayer(AccountID int, FirstName, LastName string, slot int) (int, error) {
@@ -121,8 +151,8 @@ const (
 	INNER JOIN Accounts as acc ON p.AccountID = acc.AccountID `
 )
 
-func (db *DBHandler) readPlayer(rows *sql.Rows) (*entity.Player, error) {
-	plr := entity.Player{ActiveNanoSlotNum: 0}
+func (db *DBHandler) readPlayer(rows *sql.Rows) (*Player, error) {
+	plr := Player{ActiveNanoSlotNum: 0}
 
 	if err := rows.Scan(
 		&plr.PlayerID, &plr.AccountID, &plr.Slot, &plr.PCStyle.SzFirstName, &plr.PCStyle.SzLastName,
@@ -162,13 +192,13 @@ func (db *DBHandler) readPlayer(rows *sql.Rows) (*entity.Player, error) {
 	return &plr, nil
 }
 
-func (db *DBHandler) GetPlayer(PlayerID int) (*entity.Player, error) {
+func (db *DBHandler) GetPlayer(PlayerID int) (*Player, error) {
 	rows, err := db.Query(QUERY_PLAYERS+"WHERE p.PlayerID = $1", PlayerID)
 	if err != nil {
 		return nil, err
 	}
 
-	var plr *entity.Player
+	var plr *Player
 	for rows.Next() {
 		plr, err = db.readPlayer(rows)
 		if err != nil {
@@ -179,13 +209,13 @@ func (db *DBHandler) GetPlayer(PlayerID int) (*entity.Player, error) {
 	return plr, nil
 }
 
-func (db *DBHandler) GetPlayers(AccountID int) ([]entity.Player, error) {
+func (db *DBHandler) GetPlayers(AccountID int) ([]Player, error) {
 	rows, err := db.Query(QUERY_PLAYERS+"WHERE p.AccountID = $1", AccountID)
 	if err != nil {
 		return nil, err
 	}
 
-	var plrs []entity.Player
+	var plrs []Player
 	for rows.Next() {
 		plr, err := db.readPlayer(rows)
 		if err != nil {

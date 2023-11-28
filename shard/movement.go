@@ -1,6 +1,8 @@
 package shard
 
 import (
+	"fmt"
+
 	"github.com/CPunch/gopenfusion/internal/entity"
 	"github.com/CPunch/gopenfusion/internal/protocol"
 )
@@ -13,15 +15,14 @@ func (server *ShardServer) updatePlayerPosition(plr *entity.Player, X, Y, Z, Ang
 	server.updateEntityChunk(plr, plr.GetChunkPos(), entity.MakeChunkPosition(X, Y))
 }
 
-func (server *ShardServer) playerMove(peer *protocol.CNPeer, pkt protocol.Packet) error {
+func (server *ShardServer) playerMove(peer *protocol.CNPeer, _plr interface{}, pkt protocol.Packet) error {
 	var move protocol.SP_CL2FE_REQ_PC_MOVE
 	pkt.Decode(&move)
 
-	// sanity check
-	plr, err := server.getPlayer(peer)
-	if err != nil {
-		return err
+	if _plr == nil {
+		return fmt.Errorf("playerMove: _plr is nil")
 	}
+	plr := _plr.(*entity.Player)
 
 	// update chunking
 	server.updatePlayerPosition(plr, int(move.IX), int(move.IY), int(move.IZ), int(move.IAngle))
@@ -42,15 +43,14 @@ func (server *ShardServer) playerMove(peer *protocol.CNPeer, pkt protocol.Packet
 	})
 }
 
-func (server *ShardServer) playerStop(peer *protocol.CNPeer, pkt protocol.Packet) error {
+func (server *ShardServer) playerStop(peer *protocol.CNPeer, _plr interface{}, pkt protocol.Packet) error {
 	var stop protocol.SP_CL2FE_REQ_PC_STOP
 	pkt.Decode(&stop)
 
-	// sanity check
-	plr, err := server.getPlayer(peer)
-	if err != nil {
-		return err
+	if _plr == nil {
+		return fmt.Errorf("playerStop: _plr is nil")
 	}
+	plr := _plr.(*entity.Player)
 
 	// update chunking
 	server.updatePlayerPosition(plr, int(stop.IX), int(stop.IY), int(stop.IZ), plr.Angle)
@@ -65,15 +65,14 @@ func (server *ShardServer) playerStop(peer *protocol.CNPeer, pkt protocol.Packet
 	})
 }
 
-func (server *ShardServer) playerJump(peer *protocol.CNPeer, pkt protocol.Packet) error {
+func (server *ShardServer) playerJump(peer *protocol.CNPeer, _plr interface{}, pkt protocol.Packet) error {
 	var jump protocol.SP_CL2FE_REQ_PC_JUMP
 	pkt.Decode(&jump)
 
-	// sanity check
-	plr, err := server.getPlayer(peer)
-	if err != nil {
-		return err
+	if _plr == nil {
+		return fmt.Errorf("playerJump: _plr is nil")
 	}
+	plr := _plr.(*entity.Player)
 
 	// update chunking
 	server.updatePlayerPosition(plr, int(jump.IX), int(jump.IY), int(jump.IZ), plr.Angle)

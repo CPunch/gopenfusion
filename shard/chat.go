@@ -1,16 +1,20 @@
 package shard
 
-import "github.com/CPunch/gopenfusion/internal/protocol"
+import (
+	"fmt"
 
-func (server *ShardServer) freeChat(peer *protocol.CNPeer, pkt protocol.Packet) error {
+	"github.com/CPunch/gopenfusion/internal/entity"
+	"github.com/CPunch/gopenfusion/internal/protocol"
+)
+
+func (server *ShardServer) freeChat(peer *protocol.CNPeer, _plr interface{}, pkt protocol.Packet) error {
 	var chat protocol.SP_CL2FE_REQ_SEND_FREECHAT_MESSAGE
 	pkt.Decode(&chat)
 
-	// sanity check
-	plr, err := server.getPlayer(peer)
-	if err != nil {
-		return err
+	if _plr == nil {
+		return fmt.Errorf("freeChat: _plr is nil")
 	}
+	plr := _plr.(*entity.Player)
 
 	// spread message
 	return server.sendAllPacket(plr, protocol.P_FE2CL_REP_SEND_FREECHAT_MESSAGE_SUCC, protocol.SP_FE2CL_REP_SEND_FREECHAT_MESSAGE_SUCC{
@@ -20,15 +24,14 @@ func (server *ShardServer) freeChat(peer *protocol.CNPeer, pkt protocol.Packet) 
 	})
 }
 
-func (server *ShardServer) menuChat(peer *protocol.CNPeer, pkt protocol.Packet) error {
+func (server *ShardServer) menuChat(peer *protocol.CNPeer, _plr interface{}, pkt protocol.Packet) error {
 	var chat protocol.SP_CL2FE_REQ_SEND_MENUCHAT_MESSAGE
 	pkt.Decode(&chat)
 
-	// sanity check
-	plr, err := server.getPlayer(peer)
-	if err != nil {
-		return err
+	if _plr == nil {
+		return fmt.Errorf("menuChat: _plr is nil")
 	}
+	plr := _plr.(*entity.Player)
 
 	// spread message
 	return server.sendAllPacket(plr, protocol.P_FE2CL_REP_SEND_MENUCHAT_MESSAGE_SUCC, protocol.SP_FE2CL_REP_SEND_MENUCHAT_MESSAGE_SUCC{
@@ -38,15 +41,14 @@ func (server *ShardServer) menuChat(peer *protocol.CNPeer, pkt protocol.Packet) 
 	})
 }
 
-func (server *ShardServer) emoteChat(peer *protocol.CNPeer, pkt protocol.Packet) error {
+func (server *ShardServer) emoteChat(peer *protocol.CNPeer, _plr interface{}, pkt protocol.Packet) error {
 	var chat protocol.SP_CL2FE_REQ_PC_AVATAR_EMOTES_CHAT
 	pkt.Decode(&chat)
 
-	// sanity check
-	plr, err := server.getPlayer(peer)
-	if err != nil {
-		return err
+	if _plr == nil {
+		return fmt.Errorf("emoteChat: _plr is nil")
 	}
+	plr := _plr.(*entity.Player)
 
 	// spread message
 	return server.sendAllPacket(plr, protocol.P_FE2CL_REP_PC_AVATAR_EMOTES_CHAT, protocol.SP_FE2CL_REP_PC_AVATAR_EMOTES_CHAT{

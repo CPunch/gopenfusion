@@ -6,9 +6,8 @@ import (
 	"io"
 	"log"
 	"net"
+	"sync/atomic"
 	"time"
-
-	"github.com/CPunch/gopenfusion/internal/protocol/pool"
 )
 
 const (
@@ -18,15 +17,16 @@ const (
 
 // CNPeer is a simple wrapper for net.Conn connections to send/recv packets over the Fusionfall packet protocol.
 type CNPeer struct {
-	conn      net.Conn
-	eRecv     chan *Event
-	SzID      string
-	E_key     []byte
-	FE_key    []byte
-	AccountID int
-	PlayerID  int32
-	whichKey  int
-	alive     bool
+	conn     net.Conn
+	eRecv    chan *Event
+	whichKey int
+	alive    *atomic.Bool
+
+	// May not be set while Send() or Handler() are concurrently running.
+	E_key []byte
+
+	// May not be set while Send() or Handler() are concurrently running.
+	FE_key []byte
 }
 
 func GetTime() uint64 {
@@ -34,22 +34,23 @@ func GetTime() uint64 {
 }
 
 func NewCNPeer(eRecv chan *Event, conn net.Conn) *CNPeer {
-	return &CNPeer{
-		conn:      conn,
-		eRecv:     eRecv,
-		SzID:      "",
-		E_key:     []byte(DEFAULT_KEY),
-		FE_key:    nil,
-		AccountID: -1,
-		whichKey:  USE_E,
-		alive:     true,
+	p := &CNPeer{
+		conn:     conn,
+		eRecv:    eRecv,
+		whichKey: USE_E,
+		alive:    &atomic.Bool{},
+
+		E_key:  []byte(DEFAULT_KEY),
+		FE_key: nil,
 	}
+
+	return p
 }
 
 func (peer *CNPeer) Send(typeID uint32, data ...interface{}) error {
 	// grab buffer from pool
-	buf := pool.Get()
-	defer pool.Put(buf)
+	buf := GetBuffer()
+	defer PutBuffer(buf)
 
 	// allocate space for packet size
 	buf.Write(make([]byte, 4))
@@ -73,12 +74,14 @@ func (peer *CNPeer) Send(typeID uint32, data ...interface{}) error {
 	binary.LittleEndian.PutUint32(buf.Bytes()[:4], uint32(buf.Len()-4))
 
 	// encrypt body
+	var key []byte
 	switch peer.whichKey {
 	case USE_E:
-		EncryptData(buf.Bytes()[4:], peer.E_key)
+		key = peer.E_key
 	case USE_FE:
-		EncryptData(buf.Bytes()[4:], peer.FE_key)
+		key = peer.FE_key
 	}
+	EncryptData(buf.Bytes()[4:], key)
 
 	// send full packet
 	log.Printf("Sending %#v, sizeof: %d, buffer: %v", data, buf.Len(), buf.Bytes())
@@ -94,11 +97,12 @@ func (peer *CNPeer) SetActiveKey(whichKey int) {
 
 func (peer *CNPeer) Kill() {
 	log.Printf("Killing peer %p", peer)
-	if !peer.alive {
+
+	if !peer.alive.Load() {
 		return
 	}
+	peer.alive.Store(false)
 
-	peer.alive = false
 	peer.conn.Close()
 	peer.eRecv <- &Event{Type: EVENT_CLIENT_DISCONNECT, Peer: peer}
 }
@@ -107,6 +111,7 @@ func (peer *CNPeer) Kill() {
 func (peer *CNPeer) Handler() {
 	defer peer.Kill()
 
+	peer.alive.Store(true)
 	for {
 		// read packet size, the goroutine spends most of it's time parked here
 		var sz uint32
@@ -123,7 +128,7 @@ func (peer *CNPeer) Handler() {
 
 		// grab buffer && read packet body
 		if err := func() error {
-			buf := pool.Get()
+			buf := GetBuffer()
 			if _, err := buf.ReadFrom(io.LimitReader(peer.conn, int64(sz))); err != nil {
 				return fmt.Errorf("failed to read packet body! %v", err)
 			}

@@ -1,41 +1,22 @@
 package entity
 
 import (
-	"github.com/CPunch/gopenfusion/config"
+	"github.com/CPunch/gopenfusion/internal/db"
 	"github.com/CPunch/gopenfusion/internal/protocol"
 )
 
 type Player struct {
-	Peer               *protocol.CNPeer
-	Chunk              ChunkPosition
-	PlayerID           int
-	AccountID          int
-	AccountLevel       int
-	Slot               int
-	PCStyle            protocol.SPCStyle
-	PCStyle2           protocol.SPCStyle2
-	EquippedNanos      [3]int
-	Nanos              [config.NANO_COUNT]protocol.SNano
-	Equip              [config.AEQUIP_COUNT]protocol.SItemBase
-	Inven              [config.AINVEN_COUNT]protocol.SItemBase
-	Bank               [config.ABANK_COUNT]protocol.SItemBase
-	SkywayLocationFlag []byte
-	FirstUseFlag       []byte
-	Quests             []byte
-	HP                 int
-	Level              int
-	Taros              int
-	FusionMatter       int
-	Mentor             int
-	X, Y, Z            int
-	Angle              int
-	BatteryN           int
-	BatteryW           int
-	WarpLocationFlag   int
-	ActiveNanoSlotNum  int
-	Fatigue            int
-	CurrentMissionID   int
-	IPCState           int8
+	db.Player
+	Peer  *protocol.CNPeer
+	Chunk ChunkPosition
+}
+
+func NewPlayer(peer *protocol.CNPeer, player *db.Player) *Player {
+	return &Player{
+		Player: *player,
+		Peer:   peer,
+		Chunk:  MakeChunkPosition(player.X, player.Y),
+	}
 }
 
 // ==================== Entity interface ====================
