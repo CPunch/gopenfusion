@@ -40,15 +40,7 @@ func (c *Chunk) SendPacket(typeID uint32, pkt ...interface{}) {
 // calls f for each entity in this chunk, if f returns true, stop iterating
 // f can safely add/remove entities from the chunk
 func (c *Chunk) ForEachEntity(f func(entity Entity) bool) {
-	// copy entities to avoid locking for the entire iteration
-	entities := make(map[Entity]struct{})
-	c.lock.Lock()
 	for entity := range c.entities {
-		entities[entity] = struct{}{}
-	}
-	c.lock.Unlock()
-
-	for entity := range entities {
 		if f(entity) {
 			break
 		}
