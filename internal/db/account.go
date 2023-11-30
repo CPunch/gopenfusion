@@ -1,7 +1,7 @@
 package db
 
 import (
-	"fmt"
+	"errors"
 	"log"
 
 	"golang.org/x/crypto/bcrypt"
@@ -44,8 +44,8 @@ func (db *DBHandler) NewAccount(Login, Password string) (*Account, error) {
 }
 
 var (
-	ErrLoginInvalidID       = fmt.Errorf("invalid Login ID")
-	ErrLoginInvalidPassword = fmt.Errorf("invalid ID && Password combo")
+	ErrLoginInvalidID       = errors.New("invalid Login ID")
+	ErrLoginInvalidPassword = errors.New("invalid ID && Password combo")
 )
 
 func (db *DBHandler) TryLogin(Login, Password string) (*Account, error) {

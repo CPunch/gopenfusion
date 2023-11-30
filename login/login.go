@@ -2,6 +2,7 @@ package login
 
 import (
 	"encoding/binary"
+	"errors"
 	"fmt"
 	"log"
 	"math/rand"
@@ -79,7 +80,7 @@ func (server *LoginServer) Login(peer *protocol.CNPeer, _account interface{}, pk
 
 	// attempt login
 	account, err := server.dbHndlr.TryLogin(loginPkt.SzID, loginPkt.SzPassword)
-	if err == db.ErrLoginInvalidID {
+	if errors.Is(err, db.ErrLoginInvalidID) {
 		// this is the default behavior, auto create the account if the ID isn't in use
 		account, err = server.dbHndlr.NewAccount(loginPkt.SzID, loginPkt.SzPassword)
 		if err != nil {
@@ -87,7 +88,7 @@ func (server *LoginServer) Login(peer *protocol.CNPeer, _account interface{}, pk
 			SendError(LOGIN_DATABASE_ERROR)
 			return err
 		}
-	} else if err == db.ErrLoginInvalidPassword {
+	} else if errors.Is(err, db.ErrLoginInvalidPassword) {
 		// respond with invalid password
 		SendError(LOGIN_ID_AND_PASSWORD_DO_NOT_MATCH)
 		return nil

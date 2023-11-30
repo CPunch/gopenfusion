@@ -2,6 +2,7 @@ package db_test
 
 import (
 	"context"
+	"errors"
 	"os"
 	"testing"
 
@@ -50,7 +51,7 @@ func TestDBAccount(t *testing.T) {
 		t.Error("account username is not test")
 	}
 
-	if _, err = testDB.TryLogin("test", "wrongpassword"); err != db.ErrLoginInvalidPassword {
+	if _, err = testDB.TryLogin("test", "wrongpassword"); !errors.Is(err, db.ErrLoginInvalidPassword) {
 		t.Error("expected ErrLoginInvalidPassword")
 	}
 }
