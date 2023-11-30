@@ -19,10 +19,7 @@ type ShardServer struct {
 }
 
 func NewShardServer(dbHndlr *db.DBHandler, redisHndlr *redis.RedisHandler, port int) (*ShardServer, error) {
-	srvc, err := service.NewService("SHARD", port)
-	if err != nil {
-		return nil, err
-	}
+	srvc := service.NewService("SHARD", port)
 
 	server := &ShardServer{
 		service:    srvc,

@@ -18,7 +18,6 @@ const (
 // CNPeer is a simple wrapper for net.Conn connections to send/recv packets over the Fusionfall packet protocol.
 type CNPeer struct {
 	conn     net.Conn
-	eRecv    chan *Event
 	whichKey int
 	alive    *atomic.Bool
 
@@ -33,10 +32,9 @@ func GetTime() uint64 {
 	return uint64(time.Now().UnixMilli())
 }
 
-func NewCNPeer(eRecv chan *Event, conn net.Conn) *CNPeer {
+func NewCNPeer(conn net.Conn) *CNPeer {
 	p := &CNPeer{
 		conn:     conn,
-		eRecv:    eRecv,
 		whichKey: USE_E,
 		alive:    &atomic.Bool{},
 
@@ -96,59 +94,55 @@ func (peer *CNPeer) SetActiveKey(whichKey int) {
 }
 
 func (peer *CNPeer) Kill() {
-	log.Printf("Killing peer %p", peer)
-
+	// de-bounce: only kill if alive
 	if !peer.alive.CompareAndSwap(true, false) {
 		return
 	}
 
+	log.Printf("Killing peer %p", peer)
 	peer.conn.Close()
-	peer.eRecv <- &Event{Type: EVENT_CLIENT_DISCONNECT, Peer: peer}
 }
 
 // meant to be invoked as a goroutine
-func (peer *CNPeer) Handler() {
-	defer peer.Kill()
+func (peer *CNPeer) Handler(eRecv chan<- *Event) error {
+	defer func() {
+		eRecv <- &Event{Type: EVENT_CLIENT_DISCONNECT, Peer: peer}
+		close(eRecv)
+		peer.Kill()
+	}()
 
 	peer.alive.Store(true)
+	eRecv <- &Event{Type: EVENT_CLIENT_CONNECT, Peer: peer}
 	for {
 		// read packet size, the goroutine spends most of it's time parked here
 		var sz uint32
 		if err := binary.Read(peer.conn, binary.LittleEndian, &sz); err != nil {
-			log.Printf("[FATAL] failed to read packet size! %v\n", err)
-			return
+			return err
 		}
 
 		// client should never send a packet size outside of this range
 		if sz > CN_PACKET_BUFFER_SIZE || sz < 4 {
-			log.Printf("[FATAL] malicious packet size received! %d", sz)
-			return
+			return fmt.Errorf("invalid packet size: %d", sz)
 		}
 
 		// grab buffer && read packet body
-		if err := func() error {
-			buf := GetBuffer()
-			if _, err := buf.ReadFrom(io.LimitReader(peer.conn, int64(sz))); err != nil {
-				return fmt.Errorf("failed to read packet body! %v", err)
-			}
-
-			// decrypt
-			DecryptData(buf.Bytes(), peer.E_key)
-			pkt := NewPacket(buf)
-
-			// create packet && read pktID
-			var pktID uint32
-			if err := pkt.Decode(&pktID); err != nil {
-				return fmt.Errorf("failed to read packet type! %v", err)
-			}
-
-			// dispatch packet
-			log.Printf("Got packet ID: %x, with a sizeof: %d\n", pktID, sz)
-			peer.eRecv <- &Event{Type: EVENT_CLIENT_PACKET, Peer: peer, Pkt: buf, PktID: pktID}
-			return nil
-		}(); err != nil {
-			log.Printf("[FATAL] %v", err)
-			return
+		buf := GetBuffer()
+		if _, err := buf.ReadFrom(io.LimitReader(peer.conn, int64(sz))); err != nil {
+			return fmt.Errorf("failed to read packet body: %v", err)
 		}
+
+		// decrypt
+		DecryptData(buf.Bytes(), peer.E_key)
+		pkt := NewPacket(buf)
+
+		// create packet && read pktID
+		var pktID uint32
+		if err := pkt.Decode(&pktID); err != nil {
+			return fmt.Errorf("failed to read packet type! %v", err)
+		}
+
+		// dispatch packet
+		// log.Printf("Got packet ID: %x, with a sizeof: %d\n", pktID, sz)
+		eRecv <- &Event{Type: EVENT_CLIENT_PACKET, Peer: peer, Pkt: buf, PktID: pktID}
 	}
 }

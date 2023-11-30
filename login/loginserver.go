@@ -14,10 +14,7 @@ type LoginServer struct {
 }
 
 func NewLoginServer(dbHndlr *db.DBHandler, redisHndlr *redis.RedisHandler, port int) (*LoginServer, error) {
-	srvc, err := service.NewService("LOGIN", port)
-	if err != nil {
-		return nil, err
-	}
+	srvc := service.NewService("LOGIN", port)
 
 	server := &LoginServer{
 		service:    srvc,
@@ -47,6 +44,10 @@ func NewLoginServer(dbHndlr *db.DBHandler, redisHndlr *redis.RedisHandler, port 
 	return server, nil
 }
 
-func (server *LoginServer) Start() {
-	server.service.Start()
+func (server *LoginServer) Start() error {
+	return server.service.Start()
+}
+
+func (server *LoginServer) Stop() {
+	server.service.Stop()
 }
