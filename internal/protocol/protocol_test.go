@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	"github.com/CPunch/gopenfusion/internal/protocol"
+	"github.com/matryer/is"
 )
 
 type TestPacketData struct {
@@ -53,59 +54,51 @@ var (
 )
 
 func TestPacketEncode(t *testing.T) {
+	is := is.New(t)
 	buf := bytes.NewBuffer(nil)
 	pkt := protocol.NewPacket(buf)
 
-	if err := pkt.Encode(testStruct); err != nil {
-		t.Error(err)
-	}
+	err := pkt.Encode(testStruct)
+	is.NoErr(err)
 
-	if !bytes.Equal(buf.Bytes(), testData[:]) {
-		t.Error("packet data does not match!")
-	}
+	is.True(bytes.Equal(buf.Bytes(), testData[:])) // encoded data should match expected data
 }
 
 func TestPacketDecode(t *testing.T) {
+	is := is.New(t)
 	buf := bytes.NewBuffer(nil)
 	pkt := protocol.NewPacket(buf)
 	buf.Write(testData[:])
 
 	var test TestPacketData
-	if err := pkt.Decode(&test); err != nil {
-		t.Error(err)
-	}
-
-	if test != testStruct {
-		t.Error("packet data does not match!")
-	}
+	err := pkt.Decode(&test)
+	is.NoErr(err)
+	is.True(test == testStruct) // decoded data should match testStruct
 }
 
 func TestDataEncrypt(t *testing.T) {
+	is := is.New(t)
 	buf := make([]byte, len(testData))
 	copy(buf, testData[:])
 
 	protocol.EncryptData(buf, []byte(protocol.DEFAULT_KEY))
 
-	if !bytes.Equal(buf, encTestData) {
-		t.Error("encrypted data does not match!")
-	}
+	is.True(bytes.Equal(buf, encTestData)) // encrypted data should match expected data
 }
 
 func TestDataDecrypt(t *testing.T) {
+	is := is.New(t)
 	buf := make([]byte, len(encTestData))
 	copy(buf, encTestData)
 
 	protocol.DecryptData(buf, []byte(protocol.DEFAULT_KEY))
 
-	if !bytes.Equal(buf, testData[:]) {
-		t.Error("decrypted data does not match!")
-	}
+	is.True(bytes.Equal(buf, testData[:])) // decrypted data should match expected data
 }
 
 func TestCreateNewKey(t *testing.T) {
+	is := is.New(t)
 	key := protocol.CreateNewKey(123456789, 0x1234567890abcdef, 0x1234567890abcdef)
 
-	if !bytes.Equal(key, []byte{0x0, 0x31, 0xb8, 0xcd, 0xd, 0xc3, 0xad, 0x67}) {
-		t.Error("key does not match!")
-	}
+	is.True(bytes.Equal(key, []byte{0x0, 0x31, 0xb8, 0xcd, 0xd, 0xc3, 0xad, 0x67})) // key should match expected data
 }

@@ -6,6 +6,8 @@ import (
 	"os"
 	"testing"
 
+	"github.com/matryer/is"
+
 	"github.com/CPunch/gopenfusion/internal/db"
 	"github.com/CPunch/gopenfusion/internal/protocol"
 	"github.com/bitcomplete/sqltestutil"
@@ -37,23 +39,20 @@ func TestMain(m *testing.M) {
 }
 
 func TestDBAccount(t *testing.T) {
-	if _, err := testDB.NewAccount("test", "test"); err != nil {
-		t.Error(err)
-	}
+	is := is.New(t)
+
+	// create new account
+	_, err := testDB.NewAccount("test", "test")
+	is.NoErr(err)
 
 	// now try to retrieve account data
 	acc, err := testDB.TryLogin("test", "test")
-	if err != nil {
-		t.Error(err)
-	}
+	is.NoErr(err)
 
-	if acc.Login != "test" {
-		t.Error("account username is not test")
-	}
+	_, err = testDB.TryLogin("test", "wrongpassword")
 
-	if _, err = testDB.TryLogin("test", "wrongpassword"); !errors.Is(err, db.ErrLoginInvalidPassword) {
-		t.Error("expected ErrLoginInvalidPassword")
-	}
+	is.True(acc.Login == "test")                        // login data should match created account
+	is.True(errors.Is(err, db.ErrLoginInvalidPassword)) // wrong password passed to TryLogin() should fail with ErrLoginInvalidPassword
 }
 
 /*
@@ -81,22 +80,18 @@ gopenfusion=# SELECT * FROM Inventory;
 */
 
 func TestDBPlayer(t *testing.T) {
-	if _, err := testDB.NewAccount("testplayer", "test"); err != nil {
-		t.Error(err)
-	}
+	is := is.New(t)
+	_, err := testDB.NewAccount("testplayer", "test")
+	is.NoErr(err)
 
 	// now try to retrieve account data
 	acc, err := testDB.TryLogin("testplayer", "test")
-	if err != nil {
-		t.Error(err)
-	}
+	is.NoErr(err)
 
 	plrID, err := testDB.NewPlayer(acc.AccountID, "Neil", "Mcscout", 1)
-	if err != nil {
-		t.Error(err)
-	}
+	is.NoErr(err)
 
-	if err = testDB.FinishPlayer(&protocol.SP_CL2LS_REQ_CHAR_CREATE{
+	err = testDB.FinishPlayer(&protocol.SP_CL2LS_REQ_CHAR_CREATE{
 		PCStyle: protocol.SPCStyle{
 			IPC_UID:     int64(plrID),
 			INameCheck:  1,
@@ -116,11 +111,9 @@ func TestDBPlayer(t *testing.T) {
 			IEquipLBID:   359,
 			IEquipFootID: 194,
 		},
-	}, acc.AccountID); err != nil {
-		t.Error(err)
-	}
+	}, acc.AccountID)
+	is.NoErr(err)
 
-	if err = testDB.FinishTutorial(plrID, acc.AccountID); err != nil {
-		t.Error(err)
-	}
+	err = testDB.FinishTutorial(plrID, acc.AccountID)
+	is.NoErr(err)
 }

@@ -4,9 +4,11 @@ import (
 	"testing"
 
 	"github.com/CPunch/gopenfusion/internal/entity"
+	"github.com/matryer/is"
 )
 
 func TestChunkSliceDifference(t *testing.T) {
+	is := is.New(t)
 	chunks := []*entity.Chunk{
 		entity.NewChunk(entity.MakeChunkPosition(0, 0)),
 		entity.NewChunk(entity.MakeChunkPosition(0, 1)),
@@ -28,13 +30,7 @@ func TestChunkSliceDifference(t *testing.T) {
 	}
 
 	diff := entity.ChunkSliceDifference(c1, c2)
-	if len(diff) != 1 {
-		t.Logf("%+v", diff)
-		t.Error("expected 1 chunk in difference")
-	}
 
-	if diff[0] != chunks[3] {
-		t.Logf("%+v", diff)
-		t.Error("wrong difference")
-	}
+	is.True(len(diff) == 1)       // should be 1 chunk in difference
+	is.True(diff[0] == chunks[3]) // should be chunks[3] in difference
 }

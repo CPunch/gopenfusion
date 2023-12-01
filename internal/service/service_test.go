@@ -12,6 +12,7 @@ import (
 
 	"github.com/CPunch/gopenfusion/internal/protocol"
 	"github.com/CPunch/gopenfusion/internal/service"
+	"github.com/matryer/is"
 )
 
 var (
@@ -23,6 +24,15 @@ const (
 	maxDummyPeers = 5
 )
 
+func selectWithTimeout(ch <-chan struct{}, seconds int) bool {
+	select {
+	case <-ch:
+		return true
+	case <-time.After(time.Duration(seconds) * time.Second):
+		return false
+	}
+}
+
 func waitWithTimeout(wg *sync.WaitGroup, seconds int) bool {
 	done := make(chan struct{})
 	go func() {
@@ -30,12 +40,7 @@ func waitWithTimeout(wg *sync.WaitGroup, seconds int) bool {
 		wg.Wait()
 	}()
 
-	select {
-	case <-done:
-		return true
-	case <-time.After(time.Duration(seconds) * time.Second):
-		return false
-	}
+	return selectWithTimeout(done, seconds)
 }
 
 func TestMain(m *testing.M) {
@@ -49,34 +54,38 @@ func TestMain(m *testing.M) {
 }
 
 func TestService(t *testing.T) {
+	is := is.New(t)
 	ctx, cancel := context.WithCancel(context.Background())
 	srvc := service.NewService(ctx, "TEST", srvcPort)
-
-	// waitgroup to wait for test packet handler to be called
 	wg := sync.WaitGroup{}
 
+	// shutdown service when test is done
+	defer func() {
+		cancel()
+		is.True(selectWithTimeout(srvc.Stopped(), timeout)) // wait for service to stop with timeout
+	}()
+
+	// our dummy packet handler
 	srvc.AddPacketHandler(0x1234, func(peer *protocol.CNPeer, pkt protocol.Packet) error {
 		log.Printf("Received packet %#v", pkt)
 		wg.Done()
 		return nil
 	})
 
+	// run service
 	go func() {
-		if err := srvc.Start(); err != nil {
-			t.Error(err)
-		}
+		err := srvc.Start()
+		is.NoErr(err) // srvc.Start error
 	}()
 
-	// wait for service to start
-	<-srvc.Started()
+	is.True(selectWithTimeout(srvc.Started(), timeout)) // wait for service to start with timeout
+
 	wg.Add(maxDummyPeers * 3) // 2 wg.Done() calls per dummy peer
 	for i := 0; i < maxDummyPeers; i++ {
 		go func() {
 			// make dummy client
 			conn, err := net.Dial("tcp", fmt.Sprintf("127.0.0.1:%d", srvcPort))
-			if err != nil {
-				t.Error(err)
-			}
+			is.NoErr(err) // net.Dial error
 
 			peer := protocol.NewCNPeer(ctx, conn)
 			go func() {
@@ -84,9 +93,8 @@ func TestService(t *testing.T) {
 
 				// send dummy packets
 				for i := 0; i < 2; i++ {
-					if err := peer.Send(0x1234); err != nil {
-						t.Error(err)
-					}
+					err := peer.Send(0x1234)
+					is.NoErr(err) // peer.Send error
 				}
 			}()
 
@@ -96,10 +104,5 @@ func TestService(t *testing.T) {
 		}()
 	}
 
-	if !waitWithTimeout(&wg, timeout) {
-		t.Error("failed to wait for packet handler to be called")
-	}
-
-	cancel()
-	<-srvc.Stopped()
+	is.True(waitWithTimeout(&wg, timeout)) // wait for all dummy peers to be done with timeout
 }
