@@ -1,7 +1,9 @@
 package service_test
 
 import (
+	"context"
 	"fmt"
+	"log"
 	"net"
 	"os"
 	"sync"
@@ -13,12 +15,11 @@ import (
 )
 
 var (
-	srvc     *service.Service
 	srvcPort int
 )
 
 const (
-	timeout       = 5
+	timeout       = 2
 	maxDummyPeers = 5
 )
 
@@ -44,15 +45,18 @@ func TestMain(m *testing.M) {
 		panic(err)
 	}
 
-	srvc = service.NewService("TEST", srvcPort)
 	os.Exit(m.Run())
 }
 
 func TestService(t *testing.T) {
+	ctx, cancel := context.WithCancel(context.Background())
+	srvc := service.NewService(ctx, "TEST", srvcPort)
+
 	// waitgroup to wait for test packet handler to be called
 	wg := sync.WaitGroup{}
 
-	srvc.AddPacketHandler(0x1234, func(peer *protocol.CNPeer, uData interface{}, pkt protocol.Packet) error {
+	srvc.AddPacketHandler(0x1234, func(peer *protocol.CNPeer, pkt protocol.Packet) error {
+		log.Printf("Received packet %#v", pkt)
 		wg.Done()
 		return nil
 	})
@@ -65,7 +69,7 @@ func TestService(t *testing.T) {
 
 	// wait for service to start
 	<-srvc.Started()
-	wg.Add(maxDummyPeers)
+	wg.Add(maxDummyPeers * 3) // 2 wg.Done() calls per dummy peer
 	for i := 0; i < maxDummyPeers; i++ {
 		go func() {
 			// make dummy client
@@ -74,18 +78,28 @@ func TestService(t *testing.T) {
 				t.Error(err)
 			}
 
-			peer := protocol.NewCNPeer(conn)
-			defer peer.Kill()
-			// send dummy packet
-			if err := peer.Send(0x1234); err != nil {
-				t.Error(err)
-			}
+			peer := protocol.NewCNPeer(ctx, conn)
+			go func() {
+				defer peer.Kill()
+
+				// send dummy packets
+				for i := 0; i < 2; i++ {
+					if err := peer.Send(0x1234); err != nil {
+						t.Error(err)
+					}
+				}
+			}()
+
+			// we wait until Handler gracefully exits (peer was killed)
+			peer.Handler(make(chan *protocol.PacketEvent))
+			wg.Done()
 		}()
 	}
 
 	if !waitWithTimeout(&wg, timeout) {
-		t.Error("timeout waiting for packet handler to be called")
+		t.Error("failed to wait for packet handler to be called")
 	}
-	srvc.Stop()
+
+	cancel()
 	<-srvc.Stopped()
 }

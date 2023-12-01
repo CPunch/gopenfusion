@@ -1,10 +1,11 @@
 package protocol
 
 import (
+	"bytes"
+	"context"
 	"encoding/binary"
 	"fmt"
 	"io"
-	"log"
 	"net"
 	"sync/atomic"
 	"time"
@@ -15,9 +16,17 @@ const (
 	USE_FE
 )
 
+type PacketEvent struct {
+	Type  int
+	Pkt   *bytes.Buffer
+	PktID uint32
+}
+
 // CNPeer is a simple wrapper for net.Conn connections to send/recv packets over the Fusionfall packet protocol.
 type CNPeer struct {
+	uData    interface{}
 	conn     net.Conn
+	ctx      context.Context
 	whichKey int
 	alive    *atomic.Bool
 
@@ -32,9 +41,10 @@ func GetTime() uint64 {
 	return uint64(time.Now().UnixMilli())
 }
 
-func NewCNPeer(conn net.Conn) *CNPeer {
+func NewCNPeer(ctx context.Context, conn net.Conn) *CNPeer {
 	p := &CNPeer{
 		conn:     conn,
+		ctx:      ctx,
 		whichKey: USE_E,
 		alive:    &atomic.Bool{},
 
@@ -43,6 +53,14 @@ func NewCNPeer(conn net.Conn) *CNPeer {
 	}
 
 	return p
+}
+
+func (peer *CNPeer) SetUserData(uData interface{}) {
+	peer.uData = uData
+}
+
+func (peer *CNPeer) UserData() interface{} {
+	return peer.uData
 }
 
 func (peer *CNPeer) Send(typeID uint32, data ...interface{}) error {
@@ -82,7 +100,7 @@ func (peer *CNPeer) Send(typeID uint32, data ...interface{}) error {
 	EncryptData(buf.Bytes()[4:], key)
 
 	// send full packet
-	log.Printf("Sending %#v, sizeof: %d, buffer: %v", data, buf.Len(), buf.Bytes())
+	// log.Printf("Sending %#v, sizeof: %d, buffer: %v", data, buf.Len(), buf.Bytes())
 	if _, err := peer.conn.Write(buf.Bytes()); err != nil {
 		return fmt.Errorf("failed to write packet body! %v", err)
 	}
@@ -99,50 +117,52 @@ func (peer *CNPeer) Kill() {
 		return
 	}
 
-	log.Printf("Killing peer %p", peer)
 	peer.conn.Close()
 }
 
 // meant to be invoked as a goroutine
-func (peer *CNPeer) Handler(eRecv chan<- *Event) error {
+func (peer *CNPeer) Handler(eRecv chan<- *PacketEvent) error {
 	defer func() {
-		eRecv <- &Event{Type: EVENT_CLIENT_DISCONNECT, Peer: peer}
 		close(eRecv)
 		peer.Kill()
 	}()
 
 	peer.alive.Store(true)
-	eRecv <- &Event{Type: EVENT_CLIENT_CONNECT, Peer: peer}
 	for {
-		// read packet size, the goroutine spends most of it's time parked here
-		var sz uint32
-		if err := binary.Read(peer.conn, binary.LittleEndian, &sz); err != nil {
-			return err
+		select {
+		case <-peer.ctx.Done():
+			return nil
+		default:
+			// read packet size, the goroutine spends most of it's time parked here
+			var sz uint32
+			if err := binary.Read(peer.conn, binary.LittleEndian, &sz); err != nil {
+				return err
+			}
+
+			// client should never send a packet size outside of this range
+			if sz > CN_PACKET_BUFFER_SIZE || sz < 4 {
+				return fmt.Errorf("invalid packet size: %d", sz)
+			}
+
+			// grab buffer && read packet body
+			buf := GetBuffer()
+			if _, err := buf.ReadFrom(io.LimitReader(peer.conn, int64(sz))); err != nil {
+				return fmt.Errorf("failed to read packet body: %v", err)
+			}
+
+			// decrypt
+			DecryptData(buf.Bytes(), peer.E_key)
+			pkt := NewPacket(buf)
+
+			// create packet && read pktID
+			var pktID uint32
+			if err := pkt.Decode(&pktID); err != nil {
+				return fmt.Errorf("failed to read packet type! %v", err)
+			}
+
+			// dispatch packet
+			// log.Printf("Got packet ID: %x, with a sizeof: %d\n", pktID, sz)
+			eRecv <- &PacketEvent{Pkt: buf, PktID: pktID}
 		}
-
-		// client should never send a packet size outside of this range
-		if sz > CN_PACKET_BUFFER_SIZE || sz < 4 {
-			return fmt.Errorf("invalid packet size: %d", sz)
-		}
-
-		// grab buffer && read packet body
-		buf := GetBuffer()
-		if _, err := buf.ReadFrom(io.LimitReader(peer.conn, int64(sz))); err != nil {
-			return fmt.Errorf("failed to read packet body: %v", err)
-		}
-
-		// decrypt
-		DecryptData(buf.Bytes(), peer.E_key)
-		pkt := NewPacket(buf)
-
-		// create packet && read pktID
-		var pktID uint32
-		if err := pkt.Decode(&pktID); err != nil {
-			return fmt.Errorf("failed to read packet type! %v", err)
-		}
-
-		// dispatch packet
-		// log.Printf("Got packet ID: %x, with a sizeof: %d\n", pktID, sz)
-		eRecv <- &Event{Type: EVENT_CLIENT_PACKET, Peer: peer, Pkt: buf, PktID: pktID}
 	}
 }

@@ -20,16 +20,17 @@ func (server *ShardServer) attachPlayer(peer *protocol.CNPeer, meta redis.LoginM
 	// server.Start() goroutine. the only functions allowed to access
 	// it are the packet handlers as no other goroutines will be
 	// concurrently accessing it.
-	server.service.SetPeerData(peer, plr)
+	peer.SetUserData(plr)
 	return plr, nil
 }
 
-func (server *ShardServer) RequestEnter(peer *protocol.CNPeer, _plr interface{}, pkt protocol.Packet) error {
+func (server *ShardServer) RequestEnter(peer *protocol.CNPeer, pkt protocol.Packet) error {
 	var enter protocol.SP_CL2FE_REQ_PC_ENTER
 	pkt.Decode(&enter)
 
 	// resending a shard enter packet?
-	if _plr != nil {
+	_plr, ok := peer.UserData().(*entity.Player)
+	if ok && _plr != nil {
 		return fmt.Errorf("resent enter packet")
 	}
 
@@ -64,15 +65,15 @@ func (server *ShardServer) RequestEnter(peer *protocol.CNPeer, _plr interface{},
 	return nil
 }
 
-func (server *ShardServer) LoadingComplete(peer *protocol.CNPeer, _plr interface{}, pkt protocol.Packet) error {
+func (server *ShardServer) LoadingComplete(peer *protocol.CNPeer, pkt protocol.Packet) error {
 	var loadComplete protocol.SP_CL2FE_REQ_PC_LOADING_COMPLETE
 	pkt.Decode(&loadComplete)
 
 	// was the peer attached to a player?
-	if _plr == nil {
+	plr, ok := peer.UserData().(*entity.Player)
+	if !ok || plr == nil {
 		return fmt.Errorf("loadingComplete: plr is nil")
 	}
-	plr := _plr.(*entity.Player)
 
 	err := peer.Send(protocol.P_FE2CL_REP_PC_LOADING_COMPLETE_SUCC, protocol.SP_FE2CL_REP_PC_LOADING_COMPLETE_SUCC{IPC_ID: int32(plr.PlayerID)})
 	if err != nil {

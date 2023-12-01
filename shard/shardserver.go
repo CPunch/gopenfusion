@@ -1,6 +1,8 @@
 package shard
 
 import (
+	"context"
+
 	"github.com/CPunch/gopenfusion/config"
 	"github.com/CPunch/gopenfusion/internal/db"
 	"github.com/CPunch/gopenfusion/internal/entity"
@@ -18,8 +20,8 @@ type ShardServer struct {
 	chunks     map[entity.ChunkPosition]*entity.Chunk
 }
 
-func NewShardServer(dbHndlr *db.DBHandler, redisHndlr *redis.RedisHandler, port int) (*ShardServer, error) {
-	srvc := service.NewService("SHARD", port)
+func NewShardServer(ctx context.Context, dbHndlr *db.DBHandler, redisHndlr *redis.RedisHandler, port int) (*ShardServer, error) {
+	srvc := service.NewService(ctx, "SHARD", port)
 
 	server := &ShardServer{
 		service:    srvc,
@@ -53,13 +55,14 @@ func (server *ShardServer) Start() {
 	server.service.Start()
 }
 
-func (server *ShardServer) onDisconnect(peer *protocol.CNPeer, _plr interface{}) {
+func (server *ShardServer) onDisconnect(peer *protocol.CNPeer) {
 	// remove from chunks
-	if _plr != nil {
-		server.removeEntity(_plr.(*entity.Player))
+	plr, ok := peer.UserData().(*entity.Player)
+	if ok && plr != nil {
+		server.removeEntity(plr)
 	}
 }
 
-func (server *ShardServer) onConnect(peer *protocol.CNPeer) interface{} {
-	return nil
+func (server *ShardServer) onConnect(peer *protocol.CNPeer) {
+
 }

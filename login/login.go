@@ -61,7 +61,7 @@ func (server *LoginServer) AcceptLogin(peer *protocol.CNPeer, SzID string, IClie
 	return nil
 }
 
-func (server *LoginServer) Login(peer *protocol.CNPeer, _account interface{}, pkt protocol.Packet) error {
+func (server *LoginServer) Login(peer *protocol.CNPeer, pkt protocol.Packet) error {
 	var loginPkt protocol.SP_CL2LS_REQ_LOGIN
 	pkt.Decode(&loginPkt)
 
@@ -73,9 +73,9 @@ func (server *LoginServer) Login(peer *protocol.CNPeer, _account interface{}, pk
 	}
 
 	// client is resending a login packet??
-	if _account != nil {
+	if peer.UserData() != nil {
 		SendError(LOGIN_ERROR)
-		return fmt.Errorf("out of order P_CL2LS_REQ_LOGIN: %v", _account)
+		return fmt.Errorf("out of order P_CL2LS_REQ_LOGIN: %v", peer.UserData())
 	}
 
 	// attempt login
@@ -98,7 +98,7 @@ func (server *LoginServer) Login(peer *protocol.CNPeer, _account interface{}, pk
 	}
 
 	// grab player data
-	server.service.SetPeerData(peer, account)
+	peer.SetUserData(account)
 	plrs, err := server.dbHndlr.GetPlayers(account.AccountID)
 	if err != nil {
 		SendError(LOGIN_DATABASE_ERROR)
@@ -137,7 +137,7 @@ func (server *LoginServer) Login(peer *protocol.CNPeer, _account interface{}, pk
 	return server.AcceptLogin(peer, loginPkt.SzID, loginPkt.IClientVerC, 1, charInfo[:len(plrs)])
 }
 
-func (server *LoginServer) CheckCharacterName(peer *protocol.CNPeer, account interface{}, pkt protocol.Packet) error {
+func (server *LoginServer) CheckCharacterName(peer *protocol.CNPeer, pkt protocol.Packet) error {
 	var charPkt protocol.SP_CL2LS_REQ_CHECK_CHAR_NAME
 	pkt.Decode(&charPkt)
 
@@ -148,17 +148,18 @@ func (server *LoginServer) CheckCharacterName(peer *protocol.CNPeer, account int
 	})
 }
 
-func (server *LoginServer) SaveCharacterName(peer *protocol.CNPeer, account interface{}, pkt protocol.Packet) error {
+func (server *LoginServer) SaveCharacterName(peer *protocol.CNPeer, pkt protocol.Packet) error {
 	var charPkt protocol.SP_CL2LS_REQ_SAVE_CHAR_NAME
 	pkt.Decode(&charPkt)
 
-	if account == nil {
+	account, ok := peer.UserData().(*db.Account)
+	if !ok || account == nil {
 		peer.Send(protocol.P_LS2CL_REP_SAVE_CHAR_NAME_FAIL, protocol.SP_LS2CL_REP_SAVE_CHAR_NAME_FAIL{})
 		return fmt.Errorf("out of order P_LS2CL_REP_SAVE_CHAR_NAME_FAIL")
 	}
 
 	// TODO: sanity check SzFirstName && SzLastName
-	PlayerID, err := server.dbHndlr.NewPlayer(account.(*db.Account).AccountID, charPkt.SzFirstName, charPkt.SzLastName, int(charPkt.ISlotNum))
+	PlayerID, err := server.dbHndlr.NewPlayer(account.AccountID, charPkt.SzFirstName, charPkt.SzLastName, int(charPkt.ISlotNum))
 	if err != nil {
 		peer.Send(protocol.P_LS2CL_REP_SAVE_CHAR_NAME_FAIL, protocol.SP_LS2CL_REP_SAVE_CHAR_NAME_FAIL{})
 		return err
@@ -210,11 +211,12 @@ func SendFail(peer *protocol.CNPeer) error {
 	return nil
 }
 
-func (server *LoginServer) CharacterCreate(peer *protocol.CNPeer, account interface{}, pkt protocol.Packet) error {
+func (server *LoginServer) CharacterCreate(peer *protocol.CNPeer, pkt protocol.Packet) error {
 	var charPkt protocol.SP_CL2LS_REQ_CHAR_CREATE
 	pkt.Decode(&charPkt)
 
-	if account == nil {
+	account, ok := peer.UserData().(*db.Account)
+	if !ok || account == nil {
 		return SendFail(peer)
 	}
 
@@ -223,7 +225,7 @@ func (server *LoginServer) CharacterCreate(peer *protocol.CNPeer, account interf
 		return SendFail(peer)
 	}
 
-	if err := server.dbHndlr.FinishPlayer(&charPkt, account.(*db.Account).AccountID); err != nil {
+	if err := server.dbHndlr.FinishPlayer(&charPkt, account.AccountID); err != nil {
 		log.Printf("Error finishing player: %v", err)
 		return SendFail(peer)
 	}
@@ -242,15 +244,16 @@ func (server *LoginServer) CharacterCreate(peer *protocol.CNPeer, account interf
 	})
 }
 
-func (server *LoginServer) CharacterDelete(peer *protocol.CNPeer, account interface{}, pkt protocol.Packet) error {
+func (server *LoginServer) CharacterDelete(peer *protocol.CNPeer, pkt protocol.Packet) error {
 	var charPkt protocol.SP_CL2LS_REQ_CHAR_DELETE
 	pkt.Decode(&charPkt)
 
-	if account == nil {
+	account, ok := peer.UserData().(*db.Account)
+	if !ok || account == nil {
 		return SendFail(peer)
 	}
 
-	slot, err := server.dbHndlr.DeletePlayer(int(charPkt.IPC_UID), account.(*db.Account).AccountID)
+	slot, err := server.dbHndlr.DeletePlayer(int(charPkt.IPC_UID), account.AccountID)
 	if err != nil {
 		return SendFail(peer)
 	}
@@ -260,11 +263,12 @@ func (server *LoginServer) CharacterDelete(peer *protocol.CNPeer, account interf
 	})
 }
 
-func (server *LoginServer) ShardSelect(peer *protocol.CNPeer, account interface{}, pkt protocol.Packet) error {
+func (server *LoginServer) ShardSelect(peer *protocol.CNPeer, pkt protocol.Packet) error {
 	var selection protocol.SP_CL2LS_REQ_CHAR_SELECT
 	pkt.Decode(&selection)
 
-	if account == nil {
+	account, ok := peer.UserData().(*db.Account)
+	if !ok || account == nil {
 		return SendFail(peer)
 	}
 
@@ -289,7 +293,7 @@ func (server *LoginServer) ShardSelect(peer *protocol.CNPeer, account interface{
 		log.Printf("Error getting player: %v", err)
 		return SendFail(peer)
 	}
-	accountID := account.(*db.Account).AccountID
+	accountID := account.AccountID
 
 	if plr.AccountID != accountID {
 		log.Printf("HACK: player %d tried to join shard as player %d", accountID, plr.AccountID)
@@ -315,15 +319,16 @@ func (server *LoginServer) ShardSelect(peer *protocol.CNPeer, account interface{
 	return peer.Send(protocol.P_LS2CL_REP_SHARD_SELECT_SUCC, resp)
 }
 
-func (server *LoginServer) FinishTutorial(peer *protocol.CNPeer, account interface{}, pkt protocol.Packet) error {
+func (server *LoginServer) FinishTutorial(peer *protocol.CNPeer, pkt protocol.Packet) error {
 	var charPkt protocol.SP_CL2LS_REQ_SAVE_CHAR_TUTOR
 	pkt.Decode(&charPkt)
 
-	if account == nil {
+	account, ok := peer.UserData().(*db.Account)
+	if !ok || account == nil {
 		return SendFail(peer)
 	}
 
-	if err := server.dbHndlr.FinishTutorial(int(charPkt.IPC_UID), account.(*db.Account).AccountID); err != nil {
+	if err := server.dbHndlr.FinishTutorial(int(charPkt.IPC_UID), account.AccountID); err != nil {
 		return SendFail(peer)
 	}
 

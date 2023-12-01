@@ -31,7 +31,7 @@ func (s *shardCommand) SetFlags(f *flag.FlagSet) {
 }
 
 func (s *shardCommand) Execute(ctx context.Context, f *flag.FlagSet, _ ...interface{}) subcommands.ExitStatus {
-	shardServer, err := shard.NewShardServer(dbHndlr, redisHndlr, s.port)
+	shardServer, err := shard.NewShardServer(ctx, dbHndlr, redisHndlr, s.port)
 	if err != nil {
 		log.Panicf("failed to create shard server: %v", err)
 	}

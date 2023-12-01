@@ -1,6 +1,8 @@
 package login
 
 import (
+	"context"
+
 	"github.com/CPunch/gopenfusion/internal/db"
 	"github.com/CPunch/gopenfusion/internal/protocol"
 	"github.com/CPunch/gopenfusion/internal/redis"
@@ -13,8 +15,8 @@ type LoginServer struct {
 	redisHndlr *redis.RedisHandler
 }
 
-func NewLoginServer(dbHndlr *db.DBHandler, redisHndlr *redis.RedisHandler, port int) (*LoginServer, error) {
-	srvc := service.NewService("LOGIN", port)
+func NewLoginServer(ctx context.Context, dbHndlr *db.DBHandler, redisHndlr *redis.RedisHandler, port int) (*LoginServer, error) {
+	srvc := service.NewService(ctx, "LOGIN", port)
 
 	server := &LoginServer{
 		service:    srvc,
@@ -37,17 +39,9 @@ func NewLoginServer(dbHndlr *db.DBHandler, redisHndlr *redis.RedisHandler, port 
 	srvc.AddPacketHandler(protocol.P_CL2LS_REQ_CHANGE_CHAR_NAME, service.StubbedPacket)
 	srvc.AddPacketHandler(protocol.P_CL2LS_REQ_SERVER_SELECT, service.StubbedPacket)
 
-	srvc.OnConnect = func(peer *protocol.CNPeer) interface{} {
-		return nil
-	}
-
 	return server, nil
 }
 
 func (server *LoginServer) Start() error {
 	return server.service.Start()
-}
-
-func (server *LoginServer) Stop() {
-	server.service.Stop()
 }
