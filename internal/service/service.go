@@ -10,13 +10,14 @@ import (
 	"strconv"
 	"sync"
 
+	"github.com/CPunch/gopenfusion/cnpeer"
 	"github.com/CPunch/gopenfusion/config"
 	"github.com/CPunch/gopenfusion/internal/protocol"
 )
 
-type PacketHandler func(peer *protocol.CNPeer, pkt protocol.Packet) error
+type PacketHandler func(peer *cnpeer.CNPeer, pkt protocol.Packet) error
 
-func StubbedPacket(_ *protocol.CNPeer, _ protocol.Packet) error {
+func StubbedPacket(_ *cnpeer.CNPeer, _ protocol.Packet) error {
 	return nil
 }
 
@@ -28,18 +29,18 @@ type Service struct {
 	started        chan struct{}
 	stopped        chan struct{}
 	packetHandlers map[uint32]PacketHandler
-	peers          map[chan *protocol.PacketEvent]*protocol.CNPeer
+	peers          map[chan *cnpeer.PacketEvent]*cnpeer.CNPeer
 	stateLock      sync.Mutex
 
 	// OnDisconnect is called when a peer disconnects from the service.
 	// uData is the stored value of the key/value pair in the peer map.
 	// It may not be set while the service is running. (eg. srvc.Start() has been called)
-	OnDisconnect func(peer *protocol.CNPeer)
+	OnDisconnect func(peer *cnpeer.CNPeer)
 
 	// OnConnect is called when a peer connects to the service.
 	// return value is used as the value in the peer map.
 	// It may not be set while the service is running. (eg. srvc.Start() has been called)
-	OnConnect func(peer *protocol.CNPeer)
+	OnConnect func(peer *cnpeer.CNPeer)
 }
 
 func RandomPort() (int, error) {
@@ -69,7 +70,7 @@ func NewService(ctx context.Context, name string, port int) *Service {
 func (srvc *Service) Reset(ctx context.Context) {
 	srvc.ctx = ctx
 	srvc.packetHandlers = make(map[uint32]PacketHandler)
-	srvc.peers = make(map[chan *protocol.PacketEvent]*protocol.CNPeer)
+	srvc.peers = make(map[chan *cnpeer.PacketEvent]*cnpeer.CNPeer)
 	srvc.started = make(chan struct{})
 	srvc.stopped = make(chan struct{})
 }
@@ -80,8 +81,8 @@ func (srvc *Service) AddPacketHandler(pktID uint32, handler PacketHandler) {
 }
 
 type newPeerConnection struct {
-	peer    *protocol.CNPeer
-	channel chan *protocol.PacketEvent
+	peer    *cnpeer.CNPeer
+	channel chan *cnpeer.PacketEvent
 }
 
 func (srvc *Service) Start() error {
@@ -112,22 +113,22 @@ func (srvc *Service) Start() error {
 		}
 
 		// create a new peer and pass it to the event loop
-		peer := protocol.NewCNPeer(srvc.ctx, conn)
-		eRecv := make(chan *protocol.PacketEvent)
+		peer := cnpeer.NewCNPeer(srvc.ctx, conn)
+		eRecv := make(chan *cnpeer.PacketEvent)
 		peerConnections <- newPeerConnection{channel: eRecv, peer: peer}
 		go peer.Handler(eRecv)
 	}
 }
 
-func (srvc *Service) getPeer(channel chan *protocol.PacketEvent) *protocol.CNPeer {
+func (srvc *Service) getPeer(channel chan *cnpeer.PacketEvent) *cnpeer.CNPeer {
 	return srvc.peers[channel]
 }
 
-func (srvc *Service) setPeer(channel chan *protocol.PacketEvent, peer *protocol.CNPeer) {
+func (srvc *Service) setPeer(channel chan *cnpeer.PacketEvent, peer *cnpeer.CNPeer) {
 	srvc.peers[channel] = peer
 }
 
-func (srvc *Service) removePeer(channel chan *protocol.PacketEvent) {
+func (srvc *Service) removePeer(channel chan *cnpeer.PacketEvent) {
 	delete(srvc.peers, channel)
 }
 
@@ -147,7 +148,7 @@ func (srvc *Service) Stopped() <-chan struct{} {
 // if f returns false, the iteration is stopped.
 // NOTE: the peer map is not locked while iterating, if you're calling this
 // outside of the service's event loop, you'll need to lock the peer map yourself.
-func (srvc *Service) RangePeers(f func(peer *protocol.CNPeer) bool) {
+func (srvc *Service) RangePeers(f func(peer *cnpeer.CNPeer) bool) {
 	for _, peer := range srvc.peers {
 		if !f(peer) {
 			break
@@ -167,7 +168,7 @@ func (srvc *Service) Unlock() {
 
 func (srvc *Service) stop() {
 	// OnDisconnect handler might need to do something important
-	srvc.RangePeers(func(peer *protocol.CNPeer) bool {
+	srvc.RangePeers(func(peer *cnpeer.CNPeer) bool {
 		peer.Kill()
 		if srvc.OnDisconnect != nil {
 			srvc.OnDisconnect(peer)
@@ -196,7 +197,7 @@ func (srvc *Service) handleEvents(peerPipe <-chan newPeerConnection) {
 		Chan: reflect.ValueOf(peerPipe),
 	})
 
-	addPoll := func(channel chan *protocol.PacketEvent) {
+	addPoll := func(channel chan *cnpeer.PacketEvent) {
 		poll = append(poll, reflect.SelectCase{
 			Dir:  reflect.SelectRecv,
 			Chan: reflect.ValueOf(channel),
@@ -221,7 +222,7 @@ func (srvc *Service) handleEvents(peerPipe <-chan newPeerConnection) {
 			addPoll(evnt.channel)
 			srvc.connect(evnt.channel, evnt.peer)
 		default: // peer event
-			channel := poll[chosen].Chan.Interface().(chan *protocol.PacketEvent)
+			channel := poll[chosen].Chan.Interface().(chan *cnpeer.PacketEvent)
 			peer := srvc.getPeer(channel)
 			if peer == nil {
 				log.Printf("Unknown peer event: %v", value)
@@ -229,7 +230,7 @@ func (srvc *Service) handleEvents(peerPipe <-chan newPeerConnection) {
 				continue
 			}
 
-			evnt, ok := value.Interface().(*protocol.PacketEvent)
+			evnt, ok := value.Interface().(*cnpeer.PacketEvent)
 			if !recvOK || !ok || evnt == nil {
 				// peer disconnected, remove it from our poll queue
 				removePoll(chosen)
@@ -250,7 +251,7 @@ func (srvc *Service) handleEvents(peerPipe <-chan newPeerConnection) {
 	}
 }
 
-func (srvc *Service) handlePacket(peer *protocol.CNPeer, typeID uint32, pkt protocol.Packet) error {
+func (srvc *Service) handlePacket(peer *cnpeer.CNPeer, typeID uint32, pkt protocol.Packet) error {
 	if hndlr, ok := srvc.packetHandlers[typeID]; ok {
 		// fmt.Printf("Handling packet %x\n", typeID)
 		if err := hndlr(peer, pkt); err != nil {
@@ -263,7 +264,7 @@ func (srvc *Service) handlePacket(peer *protocol.CNPeer, typeID uint32, pkt prot
 	return nil
 }
 
-func (srvc *Service) disconnect(channel chan *protocol.PacketEvent, peer *protocol.CNPeer) {
+func (srvc *Service) disconnect(channel chan *cnpeer.PacketEvent, peer *cnpeer.CNPeer) {
 	log.Printf("Peer %p disconnected from %s\n", peer, srvc.Name)
 	if srvc.OnDisconnect != nil {
 		srvc.OnDisconnect(peer)
@@ -272,7 +273,7 @@ func (srvc *Service) disconnect(channel chan *protocol.PacketEvent, peer *protoc
 	srvc.removePeer(channel)
 }
 
-func (srvc *Service) connect(channel chan *protocol.PacketEvent, peer *protocol.CNPeer) {
+func (srvc *Service) connect(channel chan *cnpeer.PacketEvent, peer *cnpeer.CNPeer) {
 	log.Printf("New peer %p connected to %s\n", peer, srvc.Name)
 	if srvc.OnConnect != nil {
 		srvc.OnConnect(peer)

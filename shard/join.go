@@ -4,12 +4,14 @@ import (
 	"fmt"
 	"log"
 
+	"github.com/CPunch/gopenfusion/cnpeer"
 	"github.com/CPunch/gopenfusion/internal/entity"
 	"github.com/CPunch/gopenfusion/internal/protocol"
 	"github.com/CPunch/gopenfusion/internal/redis"
+	"github.com/CPunch/gopenfusion/util"
 )
 
-func (server *ShardServer) attachPlayer(peer *protocol.CNPeer, meta redis.LoginMetadata) (*entity.Player, error) {
+func (server *ShardServer) attachPlayer(peer *cnpeer.CNPeer, meta redis.LoginMetadata) (*entity.Player, error) {
 	dbPlr, err := server.dbHndlr.GetPlayer(int(meta.PlayerID))
 	if err != nil {
 		return nil, err
@@ -24,7 +26,7 @@ func (server *ShardServer) attachPlayer(peer *protocol.CNPeer, meta redis.LoginM
 	return plr, nil
 }
 
-func (server *ShardServer) RequestEnter(peer *protocol.CNPeer, pkt protocol.Packet) error {
+func (server *ShardServer) RequestEnter(peer *cnpeer.CNPeer, pkt protocol.Packet) error {
 	var enter protocol.SP_CL2FE_REQ_PC_ENTER
 	pkt.Decode(&enter)
 
@@ -49,13 +51,13 @@ func (server *ShardServer) RequestEnter(peer *protocol.CNPeer, pkt protocol.Pack
 	resp := &protocol.SP_FE2CL_REP_PC_ENTER_SUCC{
 		IID:           int32(plr.PlayerID),
 		PCLoadData2CL: plr.ToPCLoadData2CL(),
-		UiSvrTime:     protocol.GetTime(),
+		UiSvrTime:     util.GetTime(),
 	}
 
 	// setup peer
 	peer.E_key = protocol.CreateNewKey(resp.UiSvrTime, uint64(resp.IID+1), uint64(resp.PCLoadData2CL.IFusionMatter+1))
 	peer.FE_key = loginData.FEKey
-	peer.SetActiveKey(protocol.USE_FE)
+	peer.SetActiveKey(cnpeer.USE_FE)
 
 	log.Printf("Player %d (AccountID %d) entered\n", resp.IID, loginData.AccountID)
 	if err := peer.Send(protocol.P_FE2CL_REP_PC_ENTER_SUCC, resp); err != nil {
@@ -65,7 +67,7 @@ func (server *ShardServer) RequestEnter(peer *protocol.CNPeer, pkt protocol.Pack
 	return nil
 }
 
-func (server *ShardServer) LoadingComplete(peer *protocol.CNPeer, pkt protocol.Packet) error {
+func (server *ShardServer) LoadingComplete(peer *cnpeer.CNPeer, pkt protocol.Packet) error {
 	var loadComplete protocol.SP_CL2FE_REQ_PC_LOADING_COMPLETE
 	pkt.Decode(&loadComplete)
 

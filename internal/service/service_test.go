@@ -10,6 +10,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/CPunch/gopenfusion/cnpeer"
 	"github.com/CPunch/gopenfusion/internal/protocol"
 	"github.com/CPunch/gopenfusion/internal/service"
 	"github.com/matryer/is"
@@ -67,7 +68,7 @@ func TestService(t *testing.T) {
 
 	// our dummy packet handler
 	wg.Add(maxDummyPeers)
-	srvc.AddPacketHandler(0x1234, func(peer *protocol.CNPeer, pkt protocol.Packet) error {
+	srvc.AddPacketHandler(0x1234, func(peer *cnpeer.CNPeer, pkt protocol.Packet) error {
 		log.Printf("Received packet %#v", pkt)
 		wg.Done()
 		return nil
@@ -75,12 +76,12 @@ func TestService(t *testing.T) {
 
 	// wait for all dummy peers to connect and disconnect
 	wg.Add(maxDummyPeers)
-	srvc.OnConnect = func(peer *protocol.CNPeer) {
+	srvc.OnConnect = func(peer *cnpeer.CNPeer) {
 		wg.Done()
 	}
 
 	wg.Add(maxDummyPeers)
-	srvc.OnDisconnect = func(peer *protocol.CNPeer) {
+	srvc.OnDisconnect = func(peer *cnpeer.CNPeer) {
 		wg.Done()
 	}
 
@@ -95,7 +96,7 @@ func TestService(t *testing.T) {
 			conn, err := net.Dial("tcp", fmt.Sprintf("127.0.0.1:%d", srvcPort))
 			is.NoErr(err) // net.Dial error
 
-			peer := protocol.NewCNPeer(ctx, conn)
+			peer := cnpeer.NewCNPeer(ctx, conn)
 			go func() {
 				defer peer.Kill()
 
@@ -106,7 +107,7 @@ func TestService(t *testing.T) {
 			}()
 
 			// we wait until Handler gracefully exits (peer was killed)
-			peer.Handler(make(chan *protocol.PacketEvent))
+			peer.Handler(make(chan *cnpeer.PacketEvent))
 			wg.Done()
 		}()
 	}

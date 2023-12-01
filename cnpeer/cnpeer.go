@@ -1,4 +1,4 @@
-package protocol
+package cnpeer
 
 import (
 	"bytes"
@@ -8,7 +8,8 @@ import (
 	"io"
 	"net"
 	"sync/atomic"
-	"time"
+
+	"github.com/CPunch/gopenfusion/internal/protocol"
 )
 
 const (
@@ -37,10 +38,6 @@ type CNPeer struct {
 	FE_key []byte
 }
 
-func GetTime() uint64 {
-	return uint64(time.Now().UnixMilli())
-}
-
 func NewCNPeer(ctx context.Context, conn net.Conn) *CNPeer {
 	p := &CNPeer{
 		conn:     conn,
@@ -48,7 +45,7 @@ func NewCNPeer(ctx context.Context, conn net.Conn) *CNPeer {
 		whichKey: USE_E,
 		alive:    &atomic.Bool{},
 
-		E_key:  []byte(DEFAULT_KEY),
+		E_key:  []byte(protocol.DEFAULT_KEY),
 		FE_key: nil,
 	}
 
@@ -65,14 +62,14 @@ func (peer *CNPeer) UserData() interface{} {
 
 func (peer *CNPeer) Send(typeID uint32, data ...interface{}) error {
 	// grab buffer from pool
-	buf := GetBuffer()
-	defer PutBuffer(buf)
+	buf := protocol.GetBuffer()
+	defer protocol.PutBuffer(buf)
 
 	// allocate space for packet size
 	buf.Write(make([]byte, 4))
 
 	// body start
-	pkt := NewPacket(buf)
+	pkt := protocol.NewPacket(buf)
 
 	// encode type id
 	if err := pkt.Encode(typeID); err != nil {
@@ -97,7 +94,7 @@ func (peer *CNPeer) Send(typeID uint32, data ...interface{}) error {
 	case USE_FE:
 		key = peer.FE_key
 	}
-	EncryptData(buf.Bytes()[4:], key)
+	protocol.EncryptData(buf.Bytes()[4:], key)
 
 	// send full packet
 	// log.Printf("Sending %#v, sizeof: %d, buffer: %v", data, buf.Len(), buf.Bytes())
@@ -140,19 +137,19 @@ func (peer *CNPeer) Handler(eRecv chan<- *PacketEvent) error {
 			}
 
 			// client should never send a packet size outside of this range
-			if sz > CN_PACKET_BUFFER_SIZE || sz < 4 {
+			if sz > protocol.CN_PACKET_BUFFER_SIZE || sz < 4 {
 				return fmt.Errorf("invalid packet size: %d", sz)
 			}
 
 			// grab buffer && read packet body
-			buf := GetBuffer()
+			buf := protocol.GetBuffer()
 			if _, err := buf.ReadFrom(io.LimitReader(peer.conn, int64(sz))); err != nil {
 				return fmt.Errorf("failed to read packet body: %v", err)
 			}
 
 			// decrypt
-			DecryptData(buf.Bytes(), peer.E_key)
-			pkt := NewPacket(buf)
+			protocol.DecryptData(buf.Bytes(), peer.E_key)
+			pkt := protocol.NewPacket(buf)
 
 			// create packet && read pktID
 			var pktID uint32

@@ -3,6 +3,7 @@ package shard
 import (
 	"context"
 
+	"github.com/CPunch/gopenfusion/cnpeer"
 	"github.com/CPunch/gopenfusion/config"
 	"github.com/CPunch/gopenfusion/internal/db"
 	"github.com/CPunch/gopenfusion/internal/entity"
@@ -11,7 +12,7 @@ import (
 	"github.com/CPunch/gopenfusion/internal/service"
 )
 
-type PacketHandler func(peer *protocol.CNPeer, pkt protocol.Packet) error
+type PacketHandler func(peer *cnpeer.CNPeer, pkt protocol.Packet) error
 
 type ShardServer struct {
 	service    *service.Service
@@ -55,7 +56,7 @@ func (server *ShardServer) Start() {
 	server.service.Start()
 }
 
-func (server *ShardServer) onDisconnect(peer *protocol.CNPeer) {
+func (server *ShardServer) onDisconnect(peer *cnpeer.CNPeer) {
 	// remove from chunks
 	plr, ok := peer.UserData().(*entity.Player)
 	if ok && plr != nil {
@@ -63,6 +64,6 @@ func (server *ShardServer) onDisconnect(peer *protocol.CNPeer) {
 	}
 }
 
-func (server *ShardServer) onConnect(peer *protocol.CNPeer) {
+func (server *ShardServer) onConnect(peer *cnpeer.CNPeer) {
 
 }

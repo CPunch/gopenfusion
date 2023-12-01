@@ -3,11 +3,12 @@ package shard
 import (
 	"fmt"
 
+	"github.com/CPunch/gopenfusion/cnpeer"
 	"github.com/CPunch/gopenfusion/internal/entity"
 	"github.com/CPunch/gopenfusion/internal/protocol"
 )
 
-func (server *ShardServer) freeChat(peer *protocol.CNPeer, pkt protocol.Packet) error {
+func (server *ShardServer) freeChat(peer *cnpeer.CNPeer, pkt protocol.Packet) error {
 	var chat protocol.SP_CL2FE_REQ_SEND_FREECHAT_MESSAGE
 	pkt.Decode(&chat)
 
@@ -24,7 +25,7 @@ func (server *ShardServer) freeChat(peer *protocol.CNPeer, pkt protocol.Packet) 
 	})
 }
 
-func (server *ShardServer) menuChat(peer *protocol.CNPeer, pkt protocol.Packet) error {
+func (server *ShardServer) menuChat(peer *cnpeer.CNPeer, pkt protocol.Packet) error {
 	var chat protocol.SP_CL2FE_REQ_SEND_MENUCHAT_MESSAGE
 	pkt.Decode(&chat)
 
@@ -41,7 +42,7 @@ func (server *ShardServer) menuChat(peer *protocol.CNPeer, pkt protocol.Packet) 
 	})
 }
 
-func (server *ShardServer) emoteChat(peer *protocol.CNPeer, pkt protocol.Packet) error {
+func (server *ShardServer) emoteChat(peer *cnpeer.CNPeer, pkt protocol.Packet) error {
 	var chat protocol.SP_CL2FE_REQ_PC_AVATAR_EMOTES_CHAT
 	pkt.Decode(&chat)
 

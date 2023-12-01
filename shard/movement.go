@@ -3,8 +3,10 @@ package shard
 import (
 	"fmt"
 
+	"github.com/CPunch/gopenfusion/cnpeer"
 	"github.com/CPunch/gopenfusion/internal/entity"
 	"github.com/CPunch/gopenfusion/internal/protocol"
+	"github.com/CPunch/gopenfusion/util"
 )
 
 func (server *ShardServer) updatePlayerPosition(plr *entity.Player, X, Y, Z, Angle int) {
@@ -15,7 +17,7 @@ func (server *ShardServer) updatePlayerPosition(plr *entity.Player, X, Y, Z, Ang
 	server.updateEntityChunk(plr, plr.GetChunkPos(), entity.MakeChunkPosition(X, Y))
 }
 
-func (server *ShardServer) playerMove(peer *protocol.CNPeer, pkt protocol.Packet) error {
+func (server *ShardServer) playerMove(peer *cnpeer.CNPeer, pkt protocol.Packet) error {
 	var move protocol.SP_CL2FE_REQ_PC_MOVE
 	pkt.Decode(&move)
 
@@ -39,11 +41,11 @@ func (server *ShardServer) playerMove(peer *protocol.CNPeer, pkt protocol.Packet
 		CKeyValue: move.CKeyValue,
 		ISpeed:    move.ISpeed,
 		IID:       int32(plr.PlayerID),
-		ISvrTime:  protocol.GetTime(),
+		ISvrTime:  util.GetTime(),
 	})
 }
 
-func (server *ShardServer) playerStop(peer *protocol.CNPeer, pkt protocol.Packet) error {
+func (server *ShardServer) playerStop(peer *cnpeer.CNPeer, pkt protocol.Packet) error {
 	var stop protocol.SP_CL2FE_REQ_PC_STOP
 	pkt.Decode(&stop)
 
@@ -61,11 +63,11 @@ func (server *ShardServer) playerStop(peer *protocol.CNPeer, pkt protocol.Packet
 		IY:       stop.IY,
 		IZ:       stop.IZ,
 		IID:      int32(plr.PlayerID),
-		ISvrTime: protocol.GetTime(),
+		ISvrTime: util.GetTime(),
 	})
 }
 
-func (server *ShardServer) playerJump(peer *protocol.CNPeer, pkt protocol.Packet) error {
+func (server *ShardServer) playerJump(peer *cnpeer.CNPeer, pkt protocol.Packet) error {
 	var jump protocol.SP_CL2FE_REQ_PC_JUMP
 	pkt.Decode(&jump)
 
@@ -89,6 +91,6 @@ func (server *ShardServer) playerJump(peer *protocol.CNPeer, pkt protocol.Packet
 		CKeyValue: jump.CKeyValue,
 		ISpeed:    jump.ISpeed,
 		IID:       int32(plr.PlayerID),
-		ISvrTime:  protocol.GetTime(),
+		ISvrTime:  util.GetTime(),
 	})
 }

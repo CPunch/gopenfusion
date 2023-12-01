@@ -1,6 +1,6 @@
 package entity
 
-import "github.com/CPunch/gopenfusion/internal/protocol"
+import "github.com/CPunch/gopenfusion/cnpeer"
 
 type EntityKind int
 
@@ -20,6 +20,6 @@ type Entity interface {
 	SetPosition(x, y, z int)
 	SetAngle(angle int)
 
-	DisappearFromViewOf(peer *protocol.CNPeer)
-	EnterIntoViewOf(peer *protocol.CNPeer)
+	DisappearFromViewOf(peer *cnpeer.CNPeer)
+	EnterIntoViewOf(peer *cnpeer.CNPeer)
 }
