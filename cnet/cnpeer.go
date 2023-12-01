@@ -1,4 +1,4 @@
-package cnpeer
+package cnet
 
 import (
 	"bytes"

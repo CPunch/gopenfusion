@@ -4,14 +4,14 @@ import (
 	"fmt"
 	"log"
 
-	"github.com/CPunch/gopenfusion/cnpeer"
+	"github.com/CPunch/gopenfusion/cnet"
 	"github.com/CPunch/gopenfusion/internal/protocol"
 	"github.com/CPunch/gopenfusion/internal/redis"
 	"github.com/CPunch/gopenfusion/shard/entity"
 	"github.com/CPunch/gopenfusion/util"
 )
 
-func (server *ShardServer) attachPlayer(peer *cnpeer.CNPeer, meta redis.LoginMetadata) (*entity.Player, error) {
+func (server *ShardServer) attachPlayer(peer *cnet.CNPeer, meta redis.LoginMetadata) (*entity.Player, error) {
 	dbPlr, err := server.dbHndlr.GetPlayer(int(meta.PlayerID))
 	if err != nil {
 		return nil, err
@@ -26,7 +26,7 @@ func (server *ShardServer) attachPlayer(peer *cnpeer.CNPeer, meta redis.LoginMet
 	return plr, nil
 }
 
-func (server *ShardServer) RequestEnter(peer *cnpeer.CNPeer, pkt protocol.Packet) error {
+func (server *ShardServer) RequestEnter(peer *cnet.CNPeer, pkt protocol.Packet) error {
 	var enter protocol.SP_CL2FE_REQ_PC_ENTER
 	pkt.Decode(&enter)
 
@@ -57,7 +57,7 @@ func (server *ShardServer) RequestEnter(peer *cnpeer.CNPeer, pkt protocol.Packet
 	// setup peer
 	peer.E_key = protocol.CreateNewKey(resp.UiSvrTime, uint64(resp.IID+1), uint64(resp.PCLoadData2CL.IFusionMatter+1))
 	peer.FE_key = loginData.FEKey
-	peer.SetActiveKey(cnpeer.USE_FE)
+	peer.SetActiveKey(cnet.USE_FE)
 
 	log.Printf("Player %d (AccountID %d) entered\n", resp.IID, loginData.AccountID)
 	if err := peer.Send(protocol.P_FE2CL_REP_PC_ENTER_SUCC, resp); err != nil {
@@ -67,7 +67,7 @@ func (server *ShardServer) RequestEnter(peer *cnpeer.CNPeer, pkt protocol.Packet
 	return nil
 }
 
-func (server *ShardServer) LoadingComplete(peer *cnpeer.CNPeer, pkt protocol.Packet) error {
+func (server *ShardServer) LoadingComplete(peer *cnet.CNPeer, pkt protocol.Packet) error {
 	var loadComplete protocol.SP_CL2FE_REQ_PC_LOADING_COMPLETE
 	pkt.Decode(&loadComplete)
 

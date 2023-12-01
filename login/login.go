@@ -7,7 +7,7 @@ import (
 	"log"
 	"math/rand"
 
-	"github.com/CPunch/gopenfusion/cnpeer"
+	"github.com/CPunch/gopenfusion/cnet"
 	"github.com/CPunch/gopenfusion/config"
 	"github.com/CPunch/gopenfusion/internal/db"
 	"github.com/CPunch/gopenfusion/internal/protocol"
@@ -27,7 +27,7 @@ const (
 	LOGIN_UPDATED_EUALA_REQUIRED                = 9
 )
 
-func (server *LoginServer) AcceptLogin(peer *cnpeer.CNPeer, SzID string, IClientVerC int32, ISlotNum int8, data []protocol.SP_LS2CL_REP_CHAR_INFO) error {
+func (server *LoginServer) AcceptLogin(peer *cnet.CNPeer, SzID string, IClientVerC int32, ISlotNum int8, data []protocol.SP_LS2CL_REP_CHAR_INFO) error {
 	resp := protocol.SP_LS2CL_REP_LOGIN_SUCC{
 		SzID:          SzID,
 		ICharCount:    int8(len(data)),
@@ -63,7 +63,7 @@ func (server *LoginServer) AcceptLogin(peer *cnpeer.CNPeer, SzID string, IClient
 	return nil
 }
 
-func (server *LoginServer) Login(peer *cnpeer.CNPeer, pkt protocol.Packet) error {
+func (server *LoginServer) Login(peer *cnet.CNPeer, pkt protocol.Packet) error {
 	var loginPkt protocol.SP_CL2LS_REQ_LOGIN
 	pkt.Decode(&loginPkt)
 
@@ -139,7 +139,7 @@ func (server *LoginServer) Login(peer *cnpeer.CNPeer, pkt protocol.Packet) error
 	return server.AcceptLogin(peer, loginPkt.SzID, loginPkt.IClientVerC, 1, charInfo[:len(plrs)])
 }
 
-func (server *LoginServer) CheckCharacterName(peer *cnpeer.CNPeer, pkt protocol.Packet) error {
+func (server *LoginServer) CheckCharacterName(peer *cnet.CNPeer, pkt protocol.Packet) error {
 	var charPkt protocol.SP_CL2LS_REQ_CHECK_CHAR_NAME
 	pkt.Decode(&charPkt)
 
@@ -150,7 +150,7 @@ func (server *LoginServer) CheckCharacterName(peer *cnpeer.CNPeer, pkt protocol.
 	})
 }
 
-func (server *LoginServer) SaveCharacterName(peer *cnpeer.CNPeer, pkt protocol.Packet) error {
+func (server *LoginServer) SaveCharacterName(peer *cnet.CNPeer, pkt protocol.Packet) error {
 	var charPkt protocol.SP_CL2LS_REQ_SAVE_CHAR_NAME
 	pkt.Decode(&charPkt)
 
@@ -203,7 +203,7 @@ func validateCharacterCreation(character *protocol.SP_CL2LS_REQ_CHAR_CREATE) boo
 	return true
 }
 
-func SendFail(peer *cnpeer.CNPeer) error {
+func SendFail(peer *cnet.CNPeer) error {
 	if err := peer.Send(protocol.P_LS2CL_REP_SHARD_SELECT_FAIL, protocol.SP_LS2CL_REP_SHARD_SELECT_FAIL{
 		IErrorCode: 2,
 	}); err != nil {
@@ -213,7 +213,7 @@ func SendFail(peer *cnpeer.CNPeer) error {
 	return nil
 }
 
-func (server *LoginServer) CharacterCreate(peer *cnpeer.CNPeer, pkt protocol.Packet) error {
+func (server *LoginServer) CharacterCreate(peer *cnet.CNPeer, pkt protocol.Packet) error {
 	var charPkt protocol.SP_CL2LS_REQ_CHAR_CREATE
 	pkt.Decode(&charPkt)
 
@@ -246,7 +246,7 @@ func (server *LoginServer) CharacterCreate(peer *cnpeer.CNPeer, pkt protocol.Pac
 	})
 }
 
-func (server *LoginServer) CharacterDelete(peer *cnpeer.CNPeer, pkt protocol.Packet) error {
+func (server *LoginServer) CharacterDelete(peer *cnet.CNPeer, pkt protocol.Packet) error {
 	var charPkt protocol.SP_CL2LS_REQ_CHAR_DELETE
 	pkt.Decode(&charPkt)
 
@@ -265,7 +265,7 @@ func (server *LoginServer) CharacterDelete(peer *cnpeer.CNPeer, pkt protocol.Pac
 	})
 }
 
-func (server *LoginServer) ShardSelect(peer *cnpeer.CNPeer, pkt protocol.Packet) error {
+func (server *LoginServer) ShardSelect(peer *cnet.CNPeer, pkt protocol.Packet) error {
 	var selection protocol.SP_CL2LS_REQ_CHAR_SELECT
 	pkt.Decode(&selection)
 
@@ -321,7 +321,7 @@ func (server *LoginServer) ShardSelect(peer *cnpeer.CNPeer, pkt protocol.Packet)
 	return peer.Send(protocol.P_LS2CL_REP_SHARD_SELECT_SUCC, resp)
 }
 
-func (server *LoginServer) FinishTutorial(peer *cnpeer.CNPeer, pkt protocol.Packet) error {
+func (server *LoginServer) FinishTutorial(peer *cnet.CNPeer, pkt protocol.Packet) error {
 	var charPkt protocol.SP_CL2LS_REQ_SAVE_CHAR_TUTOR
 	pkt.Decode(&charPkt)
 

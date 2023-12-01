@@ -3,7 +3,7 @@ package entity
 import (
 	"sync/atomic"
 
-	"github.com/CPunch/gopenfusion/cnpeer"
+	"github.com/CPunch/gopenfusion/cnet"
 	"github.com/CPunch/gopenfusion/internal/protocol"
 )
 
@@ -63,13 +63,13 @@ func (npc *NPC) SetAngle(angle int) {
 	npc.Angle = angle
 }
 
-func (npc *NPC) DisappearFromViewOf(peer *cnpeer.CNPeer) {
+func (npc *NPC) DisappearFromViewOf(peer *cnet.CNPeer) {
 	peer.Send(protocol.P_FE2CL_NPC_EXIT, protocol.SP_FE2CL_NPC_EXIT{
 		INPC_ID: int32(npc.ID),
 	})
 }
 
-func (npc *NPC) EnterIntoViewOf(peer *cnpeer.CNPeer) {
+func (npc *NPC) EnterIntoViewOf(peer *cnet.CNPeer) {
 	peer.Send(protocol.P_FE2CL_NPC_NEW, protocol.SP_FE2CL_NPC_NEW{
 		NPCAppearanceData: npc.GetAppearanceData(),
 	})

@@ -1,18 +1,18 @@
 package entity
 
 import (
-	"github.com/CPunch/gopenfusion/cnpeer"
+	"github.com/CPunch/gopenfusion/cnet"
 	"github.com/CPunch/gopenfusion/internal/db"
 	"github.com/CPunch/gopenfusion/internal/protocol"
 )
 
 type Player struct {
 	db.Player
-	Peer  *cnpeer.CNPeer
+	Peer  *cnet.CNPeer
 	Chunk ChunkPosition
 }
 
-func NewPlayer(peer *cnpeer.CNPeer, player *db.Player) *Player {
+func NewPlayer(peer *cnet.CNPeer, player *db.Player) *Player {
 	return &Player{
 		Player: *player,
 		Peer:   peer,
@@ -52,13 +52,13 @@ func (plr *Player) SetAngle(angle int) {
 	plr.Angle = angle
 }
 
-func (plr *Player) DisappearFromViewOf(peer *cnpeer.CNPeer) {
+func (plr *Player) DisappearFromViewOf(peer *cnet.CNPeer) {
 	peer.Send(protocol.P_FE2CL_PC_EXIT, protocol.SP_FE2CL_PC_EXIT{
 		IID: int32(plr.PlayerID),
 	})
 }
 
-func (plr *Player) EnterIntoViewOf(peer *cnpeer.CNPeer) {
+func (plr *Player) EnterIntoViewOf(peer *cnet.CNPeer) {
 	peer.Send(protocol.P_FE2CL_PC_NEW, protocol.SP_FE2CL_PC_NEW{
 		PCAppearanceData: plr.GetAppearanceData(),
 	})
