@@ -72,15 +72,22 @@ func TestService(t *testing.T) {
 		return nil
 	})
 
-	// run service
-	go func() {
-		err := srvc.Start()
-		is.NoErr(err) // srvc.Start error
-	}()
+	// wait for all dummy peers to connect and disconnect
+	wg.Add(maxDummyPeers)
+	srvc.OnConnect = func(peer *protocol.CNPeer) {
+		wg.Done()
+	}
 
+	wg.Add(maxDummyPeers)
+	srvc.OnDisconnect = func(peer *protocol.CNPeer) {
+		wg.Done()
+	}
+
+	// run service
+	go is.NoErr(srvc.Start())                           // srvc.Start error
 	is.True(selectWithTimeout(srvc.Started(), timeout)) // wait for service to start with timeout
 
-	wg.Add(maxDummyPeers * 3) // 2 wg.Done() calls per dummy peer
+	wg.Add(maxDummyPeers * 3) // 3 wg.Done() calls per dummy peer. 2 per peer for receiving packets, 1 for Handler() exit
 	for i := 0; i < maxDummyPeers; i++ {
 		go func() {
 			// make dummy client
@@ -93,8 +100,7 @@ func TestService(t *testing.T) {
 
 				// send dummy packets
 				for i := 0; i < 2; i++ {
-					err := peer.Send(0x1234)
-					is.NoErr(err) // peer.Send error
+					is.NoErr(peer.Send(0x1234)) // peer.Send error
 				}
 			}()
 
