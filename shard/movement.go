@@ -4,8 +4,8 @@ import (
 	"fmt"
 
 	"github.com/CPunch/gopenfusion/cnpeer"
-	"github.com/CPunch/gopenfusion/internal/entity"
 	"github.com/CPunch/gopenfusion/internal/protocol"
+	"github.com/CPunch/gopenfusion/shard/entity"
 	"github.com/CPunch/gopenfusion/util"
 )
 

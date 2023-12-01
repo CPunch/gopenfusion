@@ -6,7 +6,7 @@ import (
 	"os"
 
 	"github.com/CPunch/gopenfusion/config"
-	"github.com/CPunch/gopenfusion/internal/entity"
+	"github.com/CPunch/gopenfusion/shard/entity"
 )
 
 type NPCData struct {

@@ -3,7 +3,7 @@ package entity_test
 import (
 	"testing"
 
-	"github.com/CPunch/gopenfusion/internal/entity"
+	"github.com/CPunch/gopenfusion/shard/entity"
 	"github.com/matryer/is"
 )
 
