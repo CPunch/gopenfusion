@@ -66,6 +66,7 @@ func TestService(t *testing.T) {
 	}()
 
 	// our dummy packet handler
+	wg.Add(maxDummyPeers)
 	srvc.AddPacketHandler(0x1234, func(peer *protocol.CNPeer, pkt protocol.Packet) error {
 		log.Printf("Received packet %#v", pkt)
 		wg.Done()
@@ -84,10 +85,10 @@ func TestService(t *testing.T) {
 	}
 
 	// run service
-	go is.NoErr(srvc.Start())                           // srvc.Start error
+	go func() { is.NoErr(srvc.Start()) }()              // srvc.Start error
 	is.True(selectWithTimeout(srvc.Started(), timeout)) // wait for service to start with timeout
 
-	wg.Add(maxDummyPeers * 3) // 3 wg.Done() calls per dummy peer. 2 per peer for receiving packets, 1 for Handler() exit
+	wg.Add(maxDummyPeers * 2) // 2 wg.Done() per peer for receiving packets
 	for i := 0; i < maxDummyPeers; i++ {
 		go func() {
 			// make dummy client
