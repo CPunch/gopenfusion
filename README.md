@@ -1,6 +1,6 @@
 # gopenfusion
 
-A toy implementation of the [Fusionfall Packet Protocol](https://openpunk.com/pages/fusionfall-openfusion/) and accompanying services, written in Go.
+A toy implementation of the [Fusionfall Packet Protocol](https://openpunk.com/pages/fusionfall-openfusion/) (see: `cnet/`) and accompanying services, written in Go.
 
 ## Landwalker demo
 
