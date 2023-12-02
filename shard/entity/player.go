@@ -2,8 +2,8 @@ package entity
 
 import (
 	"github.com/CPunch/gopenfusion/cnet"
+	"github.com/CPunch/gopenfusion/cnet/protocol"
 	"github.com/CPunch/gopenfusion/internal/db"
-	"github.com/CPunch/gopenfusion/internal/protocol"
 )
 
 type Player struct {

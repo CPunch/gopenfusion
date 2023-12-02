@@ -10,8 +10,8 @@ import (
 	"strconv"
 	"sync"
 
+	"github.com/CPunch/gopenfusion/cnet/protocol"
 	"github.com/CPunch/gopenfusion/config"
-	"github.com/CPunch/gopenfusion/internal/protocol"
 )
 
 type PacketHandler func(peer *Peer, pkt protocol.Packet) error

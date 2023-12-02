@@ -4,7 +4,7 @@ import (
 	"bytes"
 	"testing"
 
-	"github.com/CPunch/gopenfusion/internal/protocol"
+	"github.com/CPunch/gopenfusion/cnet/protocol"
 	"github.com/matryer/is"
 )
 

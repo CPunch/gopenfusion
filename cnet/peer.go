@@ -9,7 +9,7 @@ import (
 	"net"
 	"sync/atomic"
 
-	"github.com/CPunch/gopenfusion/internal/protocol"
+	"github.com/CPunch/gopenfusion/cnet/protocol"
 )
 
 const (

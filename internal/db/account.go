@@ -6,7 +6,7 @@ import (
 
 	"golang.org/x/crypto/bcrypt"
 
-	"github.com/CPunch/gopenfusion/internal/protocol"
+	"github.com/CPunch/gopenfusion/cnet/protocol"
 	"github.com/georgysavva/scany/v2/sqlscan"
 )
 

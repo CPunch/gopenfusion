@@ -8,8 +8,8 @@ import (
 
 	"github.com/matryer/is"
 
+	"github.com/CPunch/gopenfusion/cnet/protocol"
 	"github.com/CPunch/gopenfusion/internal/db"
-	"github.com/CPunch/gopenfusion/internal/protocol"
 	"github.com/bitcomplete/sqltestutil"
 )
 

@@ -11,7 +11,7 @@ import (
 	"time"
 
 	"github.com/CPunch/gopenfusion/cnet"
-	"github.com/CPunch/gopenfusion/internal/protocol"
+	"github.com/CPunch/gopenfusion/cnet/protocol"
 	"github.com/matryer/is"
 )
 

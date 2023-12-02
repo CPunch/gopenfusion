@@ -4,9 +4,9 @@ import (
 	"context"
 
 	"github.com/CPunch/gopenfusion/cnet"
+	"github.com/CPunch/gopenfusion/cnet/protocol"
 	"github.com/CPunch/gopenfusion/config"
 	"github.com/CPunch/gopenfusion/internal/db"
-	"github.com/CPunch/gopenfusion/internal/protocol"
 	"github.com/CPunch/gopenfusion/internal/redis"
 	"github.com/CPunch/gopenfusion/shard/entity"
 )

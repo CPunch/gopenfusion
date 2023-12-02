@@ -3,7 +3,7 @@ package db
 import (
 	"database/sql"
 
-	"github.com/CPunch/gopenfusion/internal/protocol"
+	"github.com/CPunch/gopenfusion/cnet/protocol"
 )
 
 type Inventory struct {
