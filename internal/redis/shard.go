@@ -7,6 +7,10 @@ type ShardMetadata struct {
 	Port int
 }
 
+const (
+	SHARD_SET = "shards"
+)
+
 func (r *RedisHandler) RegisterShard(shard ShardMetadata) error {
 	value, err := json.Marshal(shard)
 	if err != nil {

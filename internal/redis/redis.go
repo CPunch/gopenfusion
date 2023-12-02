@@ -17,10 +17,6 @@ type RedisHandler struct {
 	ctx    context.Context
 }
 
-const (
-	SHARD_SET = "shards"
-)
-
 func OpenRedis(addr string) (*RedisHandler, error) {
 	client := redis.NewClient(&redis.Options{
 		Addr:                addr,
