@@ -61,7 +61,7 @@ func TestPacketEncode(t *testing.T) {
 	err := pkt.Encode(testStruct)
 	is.NoErr(err)
 
-	is.True(bytes.Equal(buf.Bytes(), testData[:])) // encoded data should match expected data
+	is.Equal(buf.Bytes(), testData[:]) // encoded data should match expected data
 }
 
 func TestPacketDecode(t *testing.T) {
@@ -73,7 +73,7 @@ func TestPacketDecode(t *testing.T) {
 	var test TestPacketData
 	err := pkt.Decode(&test)
 	is.NoErr(err)
-	is.True(test == testStruct) // decoded data should match testStruct
+	is.Equal(test, testStruct) // decoded data should match testStruct
 }
 
 func TestDataEncrypt(t *testing.T) {
@@ -82,8 +82,7 @@ func TestDataEncrypt(t *testing.T) {
 	copy(buf, testData[:])
 
 	protocol.EncryptData(buf, []byte(protocol.DEFAULT_KEY))
-
-	is.True(bytes.Equal(buf, encTestData)) // encrypted data should match expected data
+	is.Equal(buf, encTestData) // encrypted data should match expected data
 }
 
 func TestDataDecrypt(t *testing.T) {
@@ -92,13 +91,12 @@ func TestDataDecrypt(t *testing.T) {
 	copy(buf, encTestData)
 
 	protocol.DecryptData(buf, []byte(protocol.DEFAULT_KEY))
-
-	is.True(bytes.Equal(buf, testData[:])) // decrypted data should match expected data
+	is.Equal(buf, testData[:]) // decrypted data should match expected data
 }
 
 func TestCreateNewKey(t *testing.T) {
 	is := is.New(t)
 	key := protocol.CreateNewKey(123456789, 0x1234567890abcdef, 0x1234567890abcdef)
 
-	is.True(bytes.Equal(key, []byte{0x0, 0x31, 0xb8, 0xcd, 0xd, 0xc3, 0xad, 0x67})) // key should match expected data
+	is.Equal(key, []byte{0x0, 0x31, 0xb8, 0xcd, 0xd, 0xc3, 0xad, 0x67}) // key should match expected data
 }
