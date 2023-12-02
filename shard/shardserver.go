@@ -8,21 +8,20 @@ import (
 	"github.com/CPunch/gopenfusion/internal/db"
 	"github.com/CPunch/gopenfusion/internal/protocol"
 	"github.com/CPunch/gopenfusion/internal/redis"
-	"github.com/CPunch/gopenfusion/internal/service"
 	"github.com/CPunch/gopenfusion/shard/entity"
 )
 
 type PacketHandler func(peer *cnet.Peer, pkt protocol.Packet) error
 
 type ShardServer struct {
-	service    *service.Service
+	service    *cnet.Service
 	dbHndlr    *db.DBHandler
 	redisHndlr *redis.RedisHandler
 	chunks     map[entity.ChunkPosition]*entity.Chunk
 }
 
 func NewShardServer(ctx context.Context, dbHndlr *db.DBHandler, redisHndlr *redis.RedisHandler, port int) (*ShardServer, error) {
-	srvc := service.NewService(ctx, "SHARD", port)
+	srvc := cnet.NewService(ctx, "SHARD", port)
 
 	server := &ShardServer{
 		service:    srvc,

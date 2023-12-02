@@ -1,4 +1,4 @@
-package service_test
+package cnet_test
 
 import (
 	"context"
@@ -12,7 +12,6 @@ import (
 
 	"github.com/CPunch/gopenfusion/cnet"
 	"github.com/CPunch/gopenfusion/internal/protocol"
-	"github.com/CPunch/gopenfusion/internal/service"
 	"github.com/matryer/is"
 )
 
@@ -46,7 +45,7 @@ func waitWithTimeout(wg *sync.WaitGroup, seconds int) bool {
 
 func TestMain(m *testing.M) {
 	var err error
-	srvcPort, err = service.RandomPort()
+	srvcPort, err = cnet.RandomPort()
 	if err != nil {
 		panic(err)
 	}
@@ -57,7 +56,7 @@ func TestMain(m *testing.M) {
 func TestService(t *testing.T) {
 	is := is.New(t)
 	ctx, cancel := context.WithCancel(context.Background())
-	srvc := service.NewService(ctx, "TEST", srvcPort)
+	srvc := cnet.NewService(ctx, "TEST", srvcPort)
 	wg := sync.WaitGroup{}
 
 	// shutdown service when test is done
