@@ -8,6 +8,7 @@ import (
 	"os"
 	"sync"
 	"testing"
+	"time"
 
 	"github.com/CPunch/gopenfusion/cnet"
 	"github.com/CPunch/gopenfusion/cnet/protocol"
@@ -20,7 +21,7 @@ var (
 )
 
 const (
-	timeout       = 2
+	timeout       = 2 * time.Second
 	maxDummyPeers = 5
 )
 
