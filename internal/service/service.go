@@ -15,9 +15,9 @@ import (
 	"github.com/CPunch/gopenfusion/internal/protocol"
 )
 
-type PacketHandler func(peer *cnet.CNPeer, pkt protocol.Packet) error
+type PacketHandler func(peer *cnet.Peer, pkt protocol.Packet) error
 
-func StubbedPacket(_ *cnet.CNPeer, _ protocol.Packet) error {
+func StubbedPacket(_ *cnet.Peer, _ protocol.Packet) error {
 	return nil
 }
 
@@ -29,18 +29,18 @@ type Service struct {
 	started        chan struct{}
 	stopped        chan struct{}
 	packetHandlers map[uint32]PacketHandler
-	peers          map[chan *cnet.PacketEvent]*cnet.CNPeer
+	peers          map[chan *cnet.PacketEvent]*cnet.Peer
 	stateLock      sync.Mutex
 
 	// OnDisconnect is called when a peer disconnects from the service.
 	// uData is the stored value of the key/value pair in the peer map.
 	// It may not be set while the service is running. (eg. srvc.Start() has been called)
-	OnDisconnect func(peer *cnet.CNPeer)
+	OnDisconnect func(peer *cnet.Peer)
 
 	// OnConnect is called when a peer connects to the service.
 	// return value is used as the value in the peer map.
 	// It may not be set while the service is running. (eg. srvc.Start() has been called)
-	OnConnect func(peer *cnet.CNPeer)
+	OnConnect func(peer *cnet.Peer)
 }
 
 func RandomPort() (int, error) {
@@ -70,7 +70,7 @@ func NewService(ctx context.Context, name string, port int) *Service {
 func (srvc *Service) Reset(ctx context.Context) {
 	srvc.ctx = ctx
 	srvc.packetHandlers = make(map[uint32]PacketHandler)
-	srvc.peers = make(map[chan *cnet.PacketEvent]*cnet.CNPeer)
+	srvc.peers = make(map[chan *cnet.PacketEvent]*cnet.Peer)
 	srvc.started = make(chan struct{})
 	srvc.stopped = make(chan struct{})
 }
@@ -81,7 +81,7 @@ func (srvc *Service) AddPacketHandler(pktID uint32, handler PacketHandler) {
 }
 
 type newPeerConnection struct {
-	peer    *cnet.CNPeer
+	peer    *cnet.Peer
 	channel chan *cnet.PacketEvent
 }
 
@@ -113,18 +113,18 @@ func (srvc *Service) Start() error {
 		}
 
 		// create a new peer and pass it to the event loop
-		peer := cnet.NewCNPeer(srvc.ctx, conn)
+		peer := cnet.NewPeer(srvc.ctx, conn)
 		eRecv := make(chan *cnet.PacketEvent)
 		peerConnections <- newPeerConnection{channel: eRecv, peer: peer}
 		go peer.Handler(eRecv)
 	}
 }
 
-func (srvc *Service) getPeer(channel chan *cnet.PacketEvent) *cnet.CNPeer {
+func (srvc *Service) getPeer(channel chan *cnet.PacketEvent) *cnet.Peer {
 	return srvc.peers[channel]
 }
 
-func (srvc *Service) setPeer(channel chan *cnet.PacketEvent, peer *cnet.CNPeer) {
+func (srvc *Service) setPeer(channel chan *cnet.PacketEvent, peer *cnet.Peer) {
 	srvc.peers[channel] = peer
 }
 
@@ -148,7 +148,7 @@ func (srvc *Service) Stopped() <-chan struct{} {
 // if f returns false, the iteration is stopped.
 // NOTE: the peer map is not locked while iterating, if you're calling this
 // outside of the service's event loop, you'll need to lock the peer map yourself.
-func (srvc *Service) RangePeers(f func(peer *cnet.CNPeer) bool) {
+func (srvc *Service) RangePeers(f func(peer *cnet.Peer) bool) {
 	for _, peer := range srvc.peers {
 		if !f(peer) {
 			break
@@ -168,7 +168,7 @@ func (srvc *Service) Unlock() {
 
 func (srvc *Service) stop() {
 	// OnDisconnect handler might need to do something important
-	srvc.RangePeers(func(peer *cnet.CNPeer) bool {
+	srvc.RangePeers(func(peer *cnet.Peer) bool {
 		peer.Kill()
 		if srvc.OnDisconnect != nil {
 			srvc.OnDisconnect(peer)
@@ -251,7 +251,7 @@ func (srvc *Service) handleEvents(peerPipe <-chan newPeerConnection) {
 	}
 }
 
-func (srvc *Service) handlePacket(peer *cnet.CNPeer, typeID uint32, pkt protocol.Packet) error {
+func (srvc *Service) handlePacket(peer *cnet.Peer, typeID uint32, pkt protocol.Packet) error {
 	if hndlr, ok := srvc.packetHandlers[typeID]; ok {
 		// fmt.Printf("Handling packet %x\n", typeID)
 		if err := hndlr(peer, pkt); err != nil {
@@ -264,7 +264,7 @@ func (srvc *Service) handlePacket(peer *cnet.CNPeer, typeID uint32, pkt protocol
 	return nil
 }
 
-func (srvc *Service) disconnect(channel chan *cnet.PacketEvent, peer *cnet.CNPeer) {
+func (srvc *Service) disconnect(channel chan *cnet.PacketEvent, peer *cnet.Peer) {
 	log.Printf("Peer %p disconnected from %s\n", peer, srvc.Name)
 	if srvc.OnDisconnect != nil {
 		srvc.OnDisconnect(peer)
@@ -273,7 +273,7 @@ func (srvc *Service) disconnect(channel chan *cnet.PacketEvent, peer *cnet.CNPee
 	srvc.removePeer(channel)
 }
 
-func (srvc *Service) connect(channel chan *cnet.PacketEvent, peer *cnet.CNPeer) {
+func (srvc *Service) connect(channel chan *cnet.PacketEvent, peer *cnet.Peer) {
 	log.Printf("New peer %p connected to %s\n", peer, srvc.Name)
 	if srvc.OnConnect != nil {
 		srvc.OnConnect(peer)

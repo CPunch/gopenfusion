@@ -8,7 +8,7 @@ import (
 	"github.com/CPunch/gopenfusion/shard/entity"
 )
 
-func (server *ShardServer) freeChat(peer *cnet.CNPeer, pkt protocol.Packet) error {
+func (server *ShardServer) freeChat(peer *cnet.Peer, pkt protocol.Packet) error {
 	var chat protocol.SP_CL2FE_REQ_SEND_FREECHAT_MESSAGE
 	pkt.Decode(&chat)
 
@@ -25,7 +25,7 @@ func (server *ShardServer) freeChat(peer *cnet.CNPeer, pkt protocol.Packet) erro
 	})
 }
 
-func (server *ShardServer) menuChat(peer *cnet.CNPeer, pkt protocol.Packet) error {
+func (server *ShardServer) menuChat(peer *cnet.Peer, pkt protocol.Packet) error {
 	var chat protocol.SP_CL2FE_REQ_SEND_MENUCHAT_MESSAGE
 	pkt.Decode(&chat)
 
@@ -42,7 +42,7 @@ func (server *ShardServer) menuChat(peer *cnet.CNPeer, pkt protocol.Packet) erro
 	})
 }
 
-func (server *ShardServer) emoteChat(peer *cnet.CNPeer, pkt protocol.Packet) error {
+func (server *ShardServer) emoteChat(peer *cnet.Peer, pkt protocol.Packet) error {
 	var chat protocol.SP_CL2FE_REQ_PC_AVATAR_EMOTES_CHAT
 	pkt.Decode(&chat)
 

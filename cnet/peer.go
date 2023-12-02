@@ -23,8 +23,8 @@ type PacketEvent struct {
 	PktID uint32
 }
 
-// CNPeer is a simple wrapper for net.Conn connections to send/recv packets over the Fusionfall packet protocol.
-type CNPeer struct {
+// Peer is a simple wrapper for net.Conn connections to send/recv packets over the Fusionfall packet protocol.
+type Peer struct {
 	uData    interface{}
 	conn     net.Conn
 	ctx      context.Context
@@ -38,8 +38,8 @@ type CNPeer struct {
 	FE_key []byte
 }
 
-func NewCNPeer(ctx context.Context, conn net.Conn) *CNPeer {
-	p := &CNPeer{
+func NewPeer(ctx context.Context, conn net.Conn) *Peer {
+	p := &Peer{
 		conn:     conn,
 		ctx:      ctx,
 		whichKey: USE_E,
@@ -52,15 +52,15 @@ func NewCNPeer(ctx context.Context, conn net.Conn) *CNPeer {
 	return p
 }
 
-func (peer *CNPeer) SetUserData(uData interface{}) {
+func (peer *Peer) SetUserData(uData interface{}) {
 	peer.uData = uData
 }
 
-func (peer *CNPeer) UserData() interface{} {
+func (peer *Peer) UserData() interface{} {
 	return peer.uData
 }
 
-func (peer *CNPeer) Send(typeID uint32, data ...interface{}) error {
+func (peer *Peer) Send(typeID uint32, data ...interface{}) error {
 	// grab buffer from pool
 	buf := protocol.GetBuffer()
 	defer protocol.PutBuffer(buf)
@@ -104,11 +104,11 @@ func (peer *CNPeer) Send(typeID uint32, data ...interface{}) error {
 	return nil
 }
 
-func (peer *CNPeer) SetActiveKey(whichKey int) {
+func (peer *Peer) SetActiveKey(whichKey int) {
 	peer.whichKey = whichKey
 }
 
-func (peer *CNPeer) Kill() {
+func (peer *Peer) Kill() {
 	// de-bounce: only kill if alive
 	if !peer.alive.CompareAndSwap(true, false) {
 		return
@@ -118,7 +118,7 @@ func (peer *CNPeer) Kill() {
 }
 
 // meant to be invoked as a goroutine
-func (peer *CNPeer) Handler(eRecv chan<- *PacketEvent) error {
+func (peer *Peer) Handler(eRecv chan<- *PacketEvent) error {
 	defer func() {
 		close(eRecv)
 		peer.Kill()

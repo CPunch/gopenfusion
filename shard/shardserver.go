@@ -12,7 +12,7 @@ import (
 	"github.com/CPunch/gopenfusion/shard/entity"
 )
 
-type PacketHandler func(peer *cnet.CNPeer, pkt protocol.Packet) error
+type PacketHandler func(peer *cnet.Peer, pkt protocol.Packet) error
 
 type ShardServer struct {
 	service    *service.Service
@@ -56,7 +56,7 @@ func (server *ShardServer) Start() {
 	server.service.Start()
 }
 
-func (server *ShardServer) onDisconnect(peer *cnet.CNPeer) {
+func (server *ShardServer) onDisconnect(peer *cnet.Peer) {
 	// remove from chunks
 	plr, ok := peer.UserData().(*entity.Player)
 	if ok && plr != nil {
@@ -64,6 +64,6 @@ func (server *ShardServer) onDisconnect(peer *cnet.CNPeer) {
 	}
 }
 
-func (server *ShardServer) onConnect(peer *cnet.CNPeer) {
+func (server *ShardServer) onConnect(peer *cnet.Peer) {
 
 }

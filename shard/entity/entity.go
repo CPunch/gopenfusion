@@ -20,6 +20,6 @@ type Entity interface {
 	SetPosition(x, y, z int)
 	SetAngle(angle int)
 
-	DisappearFromViewOf(peer *cnet.CNPeer)
-	EnterIntoViewOf(peer *cnet.CNPeer)
+	DisappearFromViewOf(peer *cnet.Peer)
+	EnterIntoViewOf(peer *cnet.Peer)
 }

@@ -8,11 +8,11 @@ import (
 
 type Player struct {
 	db.Player
-	Peer  *cnet.CNPeer
+	Peer  *cnet.Peer
 	Chunk ChunkPosition
 }
 
-func NewPlayer(peer *cnet.CNPeer, player *db.Player) *Player {
+func NewPlayer(peer *cnet.Peer, player *db.Player) *Player {
 	return &Player{
 		Player: *player,
 		Peer:   peer,
@@ -52,13 +52,13 @@ func (plr *Player) SetAngle(angle int) {
 	plr.Angle = angle
 }
 
-func (plr *Player) DisappearFromViewOf(peer *cnet.CNPeer) {
+func (plr *Player) DisappearFromViewOf(peer *cnet.Peer) {
 	peer.Send(protocol.P_FE2CL_PC_EXIT, protocol.SP_FE2CL_PC_EXIT{
 		IID: int32(plr.PlayerID),
 	})
 }
 
-func (plr *Player) EnterIntoViewOf(peer *cnet.CNPeer) {
+func (plr *Player) EnterIntoViewOf(peer *cnet.Peer) {
 	peer.Send(protocol.P_FE2CL_PC_NEW, protocol.SP_FE2CL_PC_NEW{
 		PCAppearanceData: plr.GetAppearanceData(),
 	})

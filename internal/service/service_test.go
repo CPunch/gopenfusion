@@ -68,7 +68,7 @@ func TestService(t *testing.T) {
 
 	// our dummy packet handler
 	wg.Add(maxDummyPeers)
-	srvc.AddPacketHandler(0x1234, func(peer *cnet.CNPeer, pkt protocol.Packet) error {
+	srvc.AddPacketHandler(0x1234, func(peer *cnet.Peer, pkt protocol.Packet) error {
 		log.Printf("Received packet %#v", pkt)
 		wg.Done()
 		return nil
@@ -76,12 +76,12 @@ func TestService(t *testing.T) {
 
 	// wait for all dummy peers to connect and disconnect
 	wg.Add(maxDummyPeers)
-	srvc.OnConnect = func(peer *cnet.CNPeer) {
+	srvc.OnConnect = func(peer *cnet.Peer) {
 		wg.Done()
 	}
 
 	wg.Add(maxDummyPeers)
-	srvc.OnDisconnect = func(peer *cnet.CNPeer) {
+	srvc.OnDisconnect = func(peer *cnet.Peer) {
 		wg.Done()
 	}
 
@@ -96,7 +96,7 @@ func TestService(t *testing.T) {
 			conn, err := net.Dial("tcp", fmt.Sprintf("127.0.0.1:%d", srvcPort))
 			is.NoErr(err) // net.Dial error
 
-			peer := cnet.NewCNPeer(ctx, conn)
+			peer := cnet.NewPeer(ctx, conn)
 			go func() {
 				defer peer.Kill()
 

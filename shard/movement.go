@@ -17,7 +17,7 @@ func (server *ShardServer) updatePlayerPosition(plr *entity.Player, X, Y, Z, Ang
 	server.updateEntityChunk(plr, plr.GetChunkPos(), entity.MakeChunkPosition(X, Y))
 }
 
-func (server *ShardServer) playerMove(peer *cnet.CNPeer, pkt protocol.Packet) error {
+func (server *ShardServer) playerMove(peer *cnet.Peer, pkt protocol.Packet) error {
 	var move protocol.SP_CL2FE_REQ_PC_MOVE
 	pkt.Decode(&move)
 
@@ -45,7 +45,7 @@ func (server *ShardServer) playerMove(peer *cnet.CNPeer, pkt protocol.Packet) er
 	})
 }
 
-func (server *ShardServer) playerStop(peer *cnet.CNPeer, pkt protocol.Packet) error {
+func (server *ShardServer) playerStop(peer *cnet.Peer, pkt protocol.Packet) error {
 	var stop protocol.SP_CL2FE_REQ_PC_STOP
 	pkt.Decode(&stop)
 
@@ -67,7 +67,7 @@ func (server *ShardServer) playerStop(peer *cnet.CNPeer, pkt protocol.Packet) er
 	})
 }
 
-func (server *ShardServer) playerJump(peer *cnet.CNPeer, pkt protocol.Packet) error {
+func (server *ShardServer) playerJump(peer *cnet.Peer, pkt protocol.Packet) error {
 	var jump protocol.SP_CL2FE_REQ_PC_JUMP
 	pkt.Decode(&jump)
 

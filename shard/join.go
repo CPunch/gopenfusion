@@ -11,7 +11,7 @@ import (
 	"github.com/CPunch/gopenfusion/util"
 )
 
-func (server *ShardServer) attachPlayer(peer *cnet.CNPeer, meta redis.LoginMetadata) (*entity.Player, error) {
+func (server *ShardServer) attachPlayer(peer *cnet.Peer, meta redis.LoginMetadata) (*entity.Player, error) {
 	dbPlr, err := server.dbHndlr.GetPlayer(int(meta.PlayerID))
 	if err != nil {
 		return nil, err
@@ -26,7 +26,7 @@ func (server *ShardServer) attachPlayer(peer *cnet.CNPeer, meta redis.LoginMetad
 	return plr, nil
 }
 
-func (server *ShardServer) RequestEnter(peer *cnet.CNPeer, pkt protocol.Packet) error {
+func (server *ShardServer) RequestEnter(peer *cnet.Peer, pkt protocol.Packet) error {
 	var enter protocol.SP_CL2FE_REQ_PC_ENTER
 	pkt.Decode(&enter)
 
@@ -67,7 +67,7 @@ func (server *ShardServer) RequestEnter(peer *cnet.CNPeer, pkt protocol.Packet) 
 	return nil
 }
 
-func (server *ShardServer) LoadingComplete(peer *cnet.CNPeer, pkt protocol.Packet) error {
+func (server *ShardServer) LoadingComplete(peer *cnet.Peer, pkt protocol.Packet) error {
 	var loadComplete protocol.SP_CL2FE_REQ_PC_LOADING_COMPLETE
 	pkt.Decode(&loadComplete)
 

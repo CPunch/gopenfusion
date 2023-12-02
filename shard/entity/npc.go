@@ -63,13 +63,13 @@ func (npc *NPC) SetAngle(angle int) {
 	npc.Angle = angle
 }
 
-func (npc *NPC) DisappearFromViewOf(peer *cnet.CNPeer) {
+func (npc *NPC) DisappearFromViewOf(peer *cnet.Peer) {
 	peer.Send(protocol.P_FE2CL_NPC_EXIT, protocol.SP_FE2CL_NPC_EXIT{
 		INPC_ID: int32(npc.ID),
 	})
 }
 
-func (npc *NPC) EnterIntoViewOf(peer *cnet.CNPeer) {
+func (npc *NPC) EnterIntoViewOf(peer *cnet.Peer) {
 	peer.Send(protocol.P_FE2CL_NPC_NEW, protocol.SP_FE2CL_NPC_NEW{
 		NPCAppearanceData: npc.GetAppearanceData(),
 	})
