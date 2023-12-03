@@ -6,7 +6,7 @@ import (
 )
 
 const (
-	DEFAULT_KEY = "m@rQn~W#"
+	DEFAULT_KEY = "m@rQn~W#" // if you change this, make sure to update the test data in protocol_test.go
 	KEY_LENGTH  = 8
 )
 
@@ -50,13 +50,14 @@ func DecryptData(buff, key []byte) {
 }
 
 func CreateNewKey(uTime, iv1, iv2 uint64) []byte {
+	dEKey := binary.LittleEndian.Uint64([]byte(DEFAULT_KEY))
+
 	num := iv1 + 1
 	num2 := iv2 + 1
-
-	dEKey := uint64(binary.LittleEndian.Uint64([]byte(DEFAULT_KEY)))
 	key := dEKey * (uTime * num * num2)
+
 	buf := make([]byte, 8)
-	binary.LittleEndian.PutUint64(buf, uint64(key))
+	binary.LittleEndian.PutUint64(buf, key)
 	return buf
 }
 
