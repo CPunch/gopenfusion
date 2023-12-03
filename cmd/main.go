@@ -6,7 +6,7 @@ import (
 	"log"
 	"os"
 
-	"github.com/CPunch/gopenfusion/config"
+	"github.com/CPunch/gopenfusion/internal/config"
 	"github.com/CPunch/gopenfusion/internal/db"
 	"github.com/CPunch/gopenfusion/internal/redis"
 

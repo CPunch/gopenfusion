@@ -10,7 +10,7 @@ import (
 	_ "embed"
 	"fmt"
 
-	"github.com/CPunch/gopenfusion/config"
+	"github.com/CPunch/gopenfusion/internal/config"
 	_ "github.com/lib/pq"
 )
 

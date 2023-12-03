@@ -4,7 +4,7 @@ import (
 	"log"
 	"sync"
 
-	"github.com/CPunch/gopenfusion/config"
+	"github.com/CPunch/gopenfusion/internal/config"
 )
 
 type ChunkPosition struct {

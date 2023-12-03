@@ -7,7 +7,7 @@ package redis
 import (
 	"context"
 
-	"github.com/CPunch/gopenfusion/config"
+	"github.com/CPunch/gopenfusion/internal/config"
 
 	"github.com/redis/go-redis/v9"
 )

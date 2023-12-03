@@ -4,7 +4,7 @@ import (
 	"database/sql"
 
 	"github.com/CPunch/gopenfusion/cnet/protocol"
-	"github.com/CPunch/gopenfusion/config"
+	"github.com/CPunch/gopenfusion/internal/config"
 	"github.com/blockloop/scan"
 )
 

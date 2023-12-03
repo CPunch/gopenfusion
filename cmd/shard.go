@@ -5,7 +5,7 @@ import (
 	"flag"
 	"log"
 
-	"github.com/CPunch/gopenfusion/config"
+	"github.com/CPunch/gopenfusion/internal/config"
 	"github.com/CPunch/gopenfusion/shard"
 	"github.com/google/subcommands"
 )

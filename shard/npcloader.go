@@ -5,7 +5,7 @@ import (
 	"log"
 	"os"
 
-	"github.com/CPunch/gopenfusion/config"
+	"github.com/CPunch/gopenfusion/internal/config"
 	"github.com/CPunch/gopenfusion/shard/entity"
 )
 
