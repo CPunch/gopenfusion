@@ -42,10 +42,7 @@ func (pkt Packet) encodeStructField(field reflect.StructField, value reflect.Val
 			buf16 = buf16[:sz]
 		} else {
 			// grow
-			// TODO: probably a better way to do this?
-			for len(buf16) < sz {
-				buf16 = append(buf16, 0)
-			}
+			buf16 = append(buf16, make([]uint16, sz-len(buf16))...)
 		}
 
 		// write
@@ -125,8 +122,7 @@ func (pkt Packet) decodeStructField(field reflect.StructField, value reflect.Val
 	// consume padding bytes
 	pad, err := strconv.Atoi(field.Tag.Get("pad"))
 	if err == nil {
-		dummy := make([]byte, pad)
-		if _, err := pkt.readWriter.Read(dummy); err != nil {
+		if _, err := pkt.readWriter.Read(make([]byte, pad)); err != nil {
 			return err
 		}
 	}
