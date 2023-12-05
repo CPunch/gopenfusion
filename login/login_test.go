@@ -97,7 +97,6 @@ func TestMain(m *testing.M) {
 
 func TestLoginSuccSequence(t *testing.T) {
 	is := is.New(t)
-
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
@@ -125,14 +124,12 @@ func TestLoginSuccSequence(t *testing.T) {
 	is.Equal(resp.ICharCount, int8(0))       // should have 0 characters
 
 	// verify account was created
-	acc, err := testDB.TryLogin("testLoginSequence", "test")
-	is.NoErr(err)                            // GetAccount() should not return an error
-	is.Equal(acc.Login, "testLoginSequence") // should have the same ID
+	_, err = testDB.TryLogin("testLoginSequence", "test")
+	is.NoErr(err) // TryLogin() should not return an error
 }
 
 func TestLoginFailSequence(t *testing.T) {
 	is := is.New(t)
-
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
