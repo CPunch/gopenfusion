@@ -42,6 +42,10 @@ func NewLoginServer(ctx context.Context, dbHndlr *db.DBHandler, redisHndlr *redi
 	return server, nil
 }
 
+func (server *LoginServer) Service() *cnet.Service {
+	return server.service
+}
+
 func (server *LoginServer) Start() error {
 	return server.service.Start()
 }
