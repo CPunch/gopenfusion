@@ -103,9 +103,7 @@ func TestLoginSuccSequence(t *testing.T) {
 
 	recv := make(chan *cnet.PacketEvent)
 	peer := makeDummyPeer(ctx, is, recv)
-	defer func() {
-		peer.Kill()
-	}()
+	defer peer.Kill()
 
 	// send login request (this should create an account)
 	err := peer.Send(protocol.P_CL2LS_REQ_LOGIN, protocol.SP_CL2LS_REQ_LOGIN{
