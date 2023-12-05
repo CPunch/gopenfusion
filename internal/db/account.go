@@ -54,6 +54,11 @@ func (db *DBHandler) TryLogin(Login, Password string) (*Account, error) {
 		return nil, err
 	}
 
+	// make sure id && pw are valid
+	if len(Login) < 4 || len(Password) < 4 {
+		return nil, ErrLoginInvalidPassword
+	}
+
 	var account Account
 	row.Next()
 	if err := sqlscan.ScanRow(&account, row); err != nil {
