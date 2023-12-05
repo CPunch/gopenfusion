@@ -28,7 +28,7 @@ func makeDummyPeer(ctx context.Context, is *is.I, recv chan<- *cnet.PacketEvent)
 	conn, err := net.Dial("tcp", fmt.Sprintf("127.0.0.1:%d", loginPort))
 	is.NoErr(err)
 
-	peer := cnet.NewPeer(context.Background(), conn)
+	peer := cnet.NewPeer(ctx, conn)
 	go func() {
 		peer.Handler(recv)
 	}()
