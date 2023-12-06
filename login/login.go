@@ -280,11 +280,6 @@ func (server *LoginServer) ShardSelect(peer *cnet.Peer, pkt protocol.Packet) err
 		return fmt.Errorf("loginServer has found no linked shards")
 	}
 
-	key, err := protocol.GenSerialKey()
-	if err != nil {
-		return err
-	}
-
 	// TODO: better shard selection logic pls
 	// for now, pick random shard
 	shard := shards[rand.Intn(len(shards))]
@@ -300,6 +295,11 @@ func (server *LoginServer) ShardSelect(peer *cnet.Peer, pkt protocol.Packet) err
 	if plr.AccountID != accountID {
 		log.Printf("HACK: player %d tried to join shard as player %d", accountID, plr.AccountID)
 		return SendFail(peer)
+	}
+
+	key, err := protocol.GenSerialKey()
+	if err != nil {
+		return err
 	}
 
 	// share the login attempt
