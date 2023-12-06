@@ -115,6 +115,7 @@ func TestMain(m *testing.M) {
 	os.Exit(ret)
 }
 
+// This test tries a typical login sequence.
 func TestLoginSuccSequence(t *testing.T) {
 	is := is.New(t)
 	ctx, cancel := context.WithCancel(context.Background())
@@ -148,6 +149,7 @@ func TestLoginSuccSequence(t *testing.T) {
 	is.NoErr(err) // TryLogin() should not return an error
 }
 
+// This test tries a typical login sequence, but with an invalid password.
 func TestLoginFailSequence(t *testing.T) {
 	is := is.New(t)
 	ctx, cancel := context.WithCancel(context.Background())
@@ -177,6 +179,7 @@ func TestLoginFailSequence(t *testing.T) {
 	is.Equal(resp.IErrorCode, int32(login.LOGIN_ID_AND_PASSWORD_DO_NOT_MATCH)) // should respond with LOGIN_ID_AND_PASSWORD_DO_NOT_MATCH
 }
 
+// This test tries a typical login sequence, and creates a character
 func TestCharacterSequence(t *testing.T) {
 	is := is.New(t)
 	ctx, cancel := context.WithCancel(context.Background())
