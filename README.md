@@ -1,4 +1,5 @@
 # gopenfusion
+![Unit Tests](https://github.com/cpunch/gopenfusion/actions/workflows/tests.yml/badge.svg)
 
 A toy implementation of the [Fusionfall Packet Protocol](https://openpunk.com/pages/fusionfall-openfusion/) (see: `cnet/`) and accompanying services, written in Go.
 
