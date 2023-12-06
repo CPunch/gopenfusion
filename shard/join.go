@@ -85,7 +85,9 @@ func (server *ShardServer) LoadingComplete(peer *cnet.Peer, pkt protocol.Packet)
 	// we send the chunk updates (PC_NEW, NPC_NEW, etc.) after the enter packet
 	chunkPos := entity.MakeChunkPosition(plr.X, plr.Y)
 	viewableChunks := server.getViewableChunks(chunkPos)
+
 	plr.SetChunkPos(chunkPos)
+	server.getChunk(chunkPos).AddEntity(plr)
 	server.addEntityToChunks(plr, viewableChunks)
 	return nil
 }
