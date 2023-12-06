@@ -2,7 +2,6 @@ package db
 
 import (
 	"errors"
-	"log"
 
 	"golang.org/x/crypto/bcrypt"
 
@@ -62,7 +61,6 @@ func (db *DBHandler) TryLogin(Login, Password string) (*Account, error) {
 	var account Account
 	row.Next()
 	if err := sqlscan.ScanRow(&account, row); err != nil {
-		log.Printf("Error scanning row: %v", err)
 		return nil, ErrLoginInvalidID
 	}
 
