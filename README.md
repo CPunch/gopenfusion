@@ -1,5 +1,11 @@
 # gopenfusion
-![Unit Tests](https://github.com/CPunch/gopenfusion/actions/workflows/tests.yaml/badge.svg)
+
+<p align="center">
+    <a href="https://github.com/CPunch/gopenfusion/actions/workflows/tests.yaml"><img src="https://github.com/CPunch/gopenfusion/actions/workflows/tests.yaml/badge.svg?branch=main" alt="Workflow"></a>
+    <a href="https://github.com/CPunch/gopenfusion/blob/main/LICENSE.md"><img src="https://img.shields.io/github/license/CPunch/gopenfusion" alt="License"></a>
+    <br>
+    <a href="https://asciinema.org/a/625524" target="_blank"><img src="https://asciinema.org/a/625524.svg" /></a>
+</p>
 
 A toy implementation of the [Fusionfall Packet Protocol](https://openpunk.com/pages/fusionfall-openfusion/) (see: `cnet/`) and accompanying services, written in Go.
 
