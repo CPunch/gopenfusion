@@ -56,6 +56,19 @@ func makeDummyPeer(ctx context.Context, is *is.I, recv chan<- *cnet.PacketEvent)
 	return peer
 }
 
+func sendAndRecv(peer *cnet.Peer, recv chan *cnet.PacketEvent, is *is.I, sID, rID uint32, out, in interface{}) {
+	// send login request (this should create an account)
+	err := peer.Send(sID, out)
+	is.NoErr(err) // peer.Send() should not return an error
+
+	// receive login response
+	evnt := <-recv
+	is.Equal(int(evnt.PktID), rID) // should receive expected type
+
+	err = protocol.NewPacket(evnt.Pkt).Decode(in)
+	is.NoErr(err) // packet.Decode() should not return an error
+}
+
 func TestMain(m *testing.M) {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
@@ -126,26 +139,19 @@ func TestLoginSuccSequence(t *testing.T) {
 	defer peer.Kill()
 
 	// send login request (this should create an account)
-	err := peer.Send(protocol.P_CL2LS_REQ_LOGIN, protocol.SP_CL2LS_REQ_LOGIN{
-		SzID:       "testLoginSequence",
-		SzPassword: "test",
-	})
-	is.NoErr(err) // peer.Send() should not return an error
-
-	// receive login response
-	evnt := <-recv
-	is.Equal(int(evnt.PktID), protocol.P_LS2CL_REP_LOGIN_SUCC) // should receive P_LS2CL_REP_LOGIN_SUCC
-
 	var resp protocol.SP_LS2CL_REP_LOGIN_SUCC
-	err = protocol.NewPacket(evnt.Pkt).Decode(&resp)
-	is.NoErr(err) // packet.Decode() should not return an error
+	sendAndRecv(peer, recv, is, protocol.P_CL2LS_REQ_LOGIN, protocol.P_LS2CL_REP_LOGIN_SUCC,
+		protocol.SP_CL2LS_REQ_LOGIN{
+			SzID:       "testLoginSequence",
+			SzPassword: "test",
+		}, &resp)
 
 	// verify response
 	is.Equal(resp.SzID, "testLoginSequence") // should have the same ID
 	is.Equal(resp.ICharCount, int8(0))       // should have 0 characters
 
 	// verify account was created
-	_, err = testDB.TryLogin("testLoginSequence", "test")
+	_, err := testDB.TryLogin("testLoginSequence", "test")
 	is.NoErr(err) // TryLogin() should not return an error
 }
 
@@ -160,19 +166,12 @@ func TestLoginFailSequence(t *testing.T) {
 	defer peer.Kill()
 
 	// send login request (this should not create an account)
-	err := peer.Send(protocol.P_CL2LS_REQ_LOGIN, protocol.SP_CL2LS_REQ_LOGIN{
-		SzID:       "",
-		SzPassword: "",
-	})
-	is.NoErr(err) // peer.Send() should not return an error
-
-	// receive login response
-	evnt := <-recv
-	is.Equal(int(evnt.PktID), protocol.P_LS2CL_REP_LOGIN_FAIL) // should receive P_LS2CL_REP_LOGIN_FAIL
-
 	var resp protocol.SP_LS2CL_REP_LOGIN_FAIL
-	err = protocol.NewPacket(evnt.Pkt).Decode(&resp)
-	is.NoErr(err) // packet.Decode() should not return an error
+	sendAndRecv(peer, recv, is, protocol.P_CL2LS_REQ_LOGIN, protocol.P_LS2CL_REP_LOGIN_FAIL,
+		protocol.SP_CL2LS_REQ_LOGIN{
+			SzID:       "",
+			SzPassword: "",
+		}, &resp)
 
 	// verify response
 	is.Equal(resp.SzID, "")                                                    // should have the same ID
@@ -190,22 +189,15 @@ func TestCharacterSequence(t *testing.T) {
 	defer peer.Kill()
 
 	// send login request (this should create an account)
-	err := peer.Send(protocol.P_CL2LS_REQ_LOGIN, protocol.SP_CL2LS_REQ_LOGIN{
-		SzID:       "TestCharacterSequence",
-		SzPassword: "test",
-	})
-	is.NoErr(err) // peer.Send() should not return an error
-
-	// receive login response
-	evnt := <-recv
-	is.Equal(int(evnt.PktID), protocol.P_LS2CL_REP_LOGIN_SUCC) // should receive P_LS2CL_REP_LOGIN_SUCC
-
 	var resp protocol.SP_LS2CL_REP_LOGIN_SUCC
-	err = protocol.NewPacket(evnt.Pkt).Decode(&resp)
-	is.NoErr(err) // packet.Decode() should not return an error
+	sendAndRecv(peer, recv, is, protocol.P_CL2LS_REQ_LOGIN, protocol.P_LS2CL_REP_LOGIN_SUCC,
+		protocol.SP_CL2LS_REQ_LOGIN{
+			SzID:       "testCharacterSequence",
+			SzPassword: "test",
+		}, &resp)
 
 	// verify response
-	is.Equal(resp.SzID, "TestCharacterSequence") // should have the same ID
+	is.Equal(resp.SzID, "testCharacterSequence") // should have the same ID
 	is.Equal(resp.ICharCount, int8(0))           // should have 0 characters
 
 	// perform key swap
@@ -221,24 +213,17 @@ func TestCharacterSequence(t *testing.T) {
 	)
 
 	// send character name check request
-	err = peer.Send(protocol.P_CL2LS_REQ_SAVE_CHAR_NAME, protocol.SP_CL2LS_REQ_SAVE_CHAR_NAME{
-		ISlotNum:    1,
-		IGender:     1,
-		IFNCode:     260,
-		ILNCode:     551,
-		IMNCode:     33,
-		SzFirstName: testCharCreate.PCStyle.SzFirstName,
-		SzLastName:  testCharCreate.PCStyle.SzLastName,
-	})
-	is.NoErr(err) // peer.Send() should not return an error
-
-	// receive character creation response
-	evnt = <-recv
-	is.Equal(int(evnt.PktID), protocol.P_LS2CL_REP_SAVE_CHAR_NAME_SUCC) // should receive P_LS2CL_REP_SAVE_CHAR_NAME_SUCC
-
 	var charResp protocol.SP_LS2CL_REP_SAVE_CHAR_NAME_SUCC
-	err = protocol.NewPacket(evnt.Pkt).Decode(&charResp)
-	is.NoErr(err) // packet.Decode() should not return an error
+	sendAndRecv(peer, recv, is, protocol.P_CL2LS_REQ_SAVE_CHAR_NAME, protocol.P_LS2CL_REP_SAVE_CHAR_NAME_SUCC,
+		protocol.SP_CL2LS_REQ_SAVE_CHAR_NAME{
+			ISlotNum:    1,
+			IGender:     1,
+			IFNCode:     260,
+			ILNCode:     551,
+			IMNCode:     33,
+			SzFirstName: testCharCreate.PCStyle.SzFirstName,
+			SzLastName:  testCharCreate.PCStyle.SzLastName,
+		}, &charResp)
 
 	// verify response
 	is.Equal(charResp.ISlotNum, int8(1))                               // should have the same slot number
@@ -249,16 +234,9 @@ func TestCharacterSequence(t *testing.T) {
 	// send character create request
 	charCreate := testCharCreate
 	charCreate.PCStyle.IPC_UID = charResp.IPC_UID
-	err = peer.Send(protocol.P_CL2LS_REQ_CHAR_CREATE, charCreate)
-	is.NoErr(err) // peer.Send() should not return an error
-
-	// receive character create response
-	evnt = <-recv
-	is.Equal(int(evnt.PktID), protocol.P_LS2CL_REP_CHAR_CREATE_SUCC) // should receive P_LS2CL_REP_CHAR_CREATE_SUCC
-
 	var charCreateResp protocol.SP_LS2CL_REP_CHAR_CREATE_SUCC
-	err = protocol.NewPacket(evnt.Pkt).Decode(&charCreateResp)
-	is.NoErr(err) // packet.Decode() should not return an error
+	sendAndRecv(peer, recv, is, protocol.P_CL2LS_REQ_CHAR_CREATE, protocol.P_LS2CL_REP_CHAR_CREATE_SUCC,
+		charCreate, &charCreateResp)
 
 	// verify response
 	is.Equal(charCreate.PCStyle, charCreateResp.SPC_Style) // should have the same PCStyle
