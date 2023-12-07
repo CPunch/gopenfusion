@@ -57,16 +57,15 @@ func makeDummyPeer(ctx context.Context, is *is.I, recv chan<- *cnet.PacketEvent)
 }
 
 func sendAndRecv(peer *cnet.Peer, recv chan *cnet.PacketEvent, is *is.I, sID, rID uint32, out, in interface{}) {
-	// send login request (this should create an account)
+	// send out packet
 	err := peer.Send(sID, out)
 	is.NoErr(err) // peer.Send() should not return an error
 
-	// receive login response
+	// receive response
 	evnt := <-recv
 	is.Equal(evnt.PktID, rID) // should receive expected type
 
-	err = protocol.NewPacket(evnt.Pkt).Decode(in)
-	is.NoErr(err) // packet.Decode() should not return an error
+	is.NoErr(protocol.NewPacket(evnt.Pkt).Decode(in)) // packet.Decode() should not return an error
 }
 
 func TestMain(m *testing.M) {
