@@ -63,8 +63,9 @@ func sendAndRecv(peer *cnet.Peer, recv chan *cnet.PacketEvent, is *is.I, sID, rI
 
 	// receive response
 	evnt := <-recv
-	is.Equal(evnt.PktID, rID) // should receive expected type
+	defer protocol.PutBuffer(evnt.Pkt)
 
+	is.Equal(evnt.PktID, rID)                         // should receive expected type
 	is.NoErr(protocol.NewPacket(evnt.Pkt).Decode(in)) // packet.Decode() should not return an error
 }
 
