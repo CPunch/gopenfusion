@@ -50,9 +50,9 @@ func NewShardServer(ctx context.Context, dbHndlr *db.DBHandler, redisHndlr *redi
 	return server, nil
 }
 
-func (server *ShardServer) Start() {
+func (server *ShardServer) Start() error {
 	server.LoadNPCs()
-	server.service.Start()
+	return server.service.Start()
 }
 
 func (server *ShardServer) onDisconnect(peer *cnet.Peer) {
@@ -65,4 +65,8 @@ func (server *ShardServer) onDisconnect(peer *cnet.Peer) {
 
 func (server *ShardServer) onConnect(peer *cnet.Peer) {
 
+}
+
+func (server *ShardServer) Service() *cnet.Service {
+	return server.service
 }
