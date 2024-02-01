@@ -82,13 +82,12 @@ func TestLoginSuccSequence(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
-	recv := make(chan *cnet.PacketEvent)
-	peer := testutil.MakeDummyPeer(ctx, is, loginPort, recv)
-	defer peer.Kill()
+	dummy := testutil.MakeDummyPeer(ctx, is, loginPort)
+	defer dummy.Kill()
 
 	// send login request (this should create an account)
 	var resp protocol.SP_LS2CL_REP_LOGIN_SUCC
-	testutil.SendAndRecv(peer, recv, is, protocol.P_CL2LS_REQ_LOGIN, protocol.P_LS2CL_REP_LOGIN_SUCC,
+	dummy.SendAndRecv(is, protocol.P_CL2LS_REQ_LOGIN, protocol.P_LS2CL_REP_LOGIN_SUCC,
 		protocol.SP_CL2LS_REQ_LOGIN{
 			SzID:       "testLoginSequence",
 			SzPassword: "test",
@@ -109,13 +108,12 @@ func TestLoginFailSequence(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
-	recv := make(chan *cnet.PacketEvent)
-	peer := testutil.MakeDummyPeer(ctx, is, loginPort, recv)
-	defer peer.Kill()
+	dummy := testutil.MakeDummyPeer(ctx, is, loginPort)
+	defer dummy.Kill()
 
 	// send login request (this should not create an account)
 	var resp protocol.SP_LS2CL_REP_LOGIN_FAIL
-	testutil.SendAndRecv(peer, recv, is, protocol.P_CL2LS_REQ_LOGIN, protocol.P_LS2CL_REP_LOGIN_FAIL,
+	dummy.SendAndRecv(is, protocol.P_CL2LS_REQ_LOGIN, protocol.P_LS2CL_REP_LOGIN_FAIL,
 		protocol.SP_CL2LS_REQ_LOGIN{
 			SzID:       "",
 			SzPassword: "",
@@ -132,13 +130,12 @@ func TestCharacterSequence(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
-	recv := make(chan *cnet.PacketEvent)
-	peer := testutil.MakeDummyPeer(ctx, is, loginPort, recv)
-	defer peer.Kill()
+	dummy := testutil.MakeDummyPeer(ctx, is, loginPort)
+	defer dummy.Kill()
 
 	// send login request (this should create an account)
 	var resp protocol.SP_LS2CL_REP_LOGIN_SUCC
-	testutil.SendAndRecv(peer, recv, is, protocol.P_CL2LS_REQ_LOGIN, protocol.P_LS2CL_REP_LOGIN_SUCC,
+	dummy.SendAndRecv(is, protocol.P_CL2LS_REQ_LOGIN, protocol.P_LS2CL_REP_LOGIN_SUCC,
 		protocol.SP_CL2LS_REQ_LOGIN{
 			SzID:       "testCharacterSequence",
 			SzPassword: "test",
@@ -149,12 +146,12 @@ func TestCharacterSequence(t *testing.T) {
 	is.Equal(resp.ICharCount, int8(0))           // should have 0 characters
 
 	// perform key swap
-	peer.E_key = protocol.CreateNewKey(
+	dummy.Peer.E_key = protocol.CreateNewKey(
 		resp.UiSvrTime,
 		uint64(resp.ICharCount+1),
 		uint64(resp.ISlotNum+1),
 	)
-	peer.FE_key = protocol.CreateNewKey(
+	dummy.Peer.FE_key = protocol.CreateNewKey(
 		binary.LittleEndian.Uint64([]byte(protocol.DEFAULT_KEY)),
 		0,
 		1,
@@ -162,7 +159,7 @@ func TestCharacterSequence(t *testing.T) {
 
 	// send character name check request
 	var charResp protocol.SP_LS2CL_REP_SAVE_CHAR_NAME_SUCC
-	testutil.SendAndRecv(peer, recv, is, protocol.P_CL2LS_REQ_SAVE_CHAR_NAME, protocol.P_LS2CL_REP_SAVE_CHAR_NAME_SUCC,
+	dummy.SendAndRecv(is, protocol.P_CL2LS_REQ_SAVE_CHAR_NAME, protocol.P_LS2CL_REP_SAVE_CHAR_NAME_SUCC,
 		protocol.SP_CL2LS_REQ_SAVE_CHAR_NAME{
 			ISlotNum:    1,
 			IGender:     1,
@@ -183,7 +180,7 @@ func TestCharacterSequence(t *testing.T) {
 	charCreate := testCharCreate
 	charCreate.PCStyle.IPC_UID = charResp.IPC_UID
 	var charCreateResp protocol.SP_LS2CL_REP_CHAR_CREATE_SUCC
-	testutil.SendAndRecv(peer, recv, is, protocol.P_CL2LS_REQ_CHAR_CREATE, protocol.P_LS2CL_REP_CHAR_CREATE_SUCC,
+	dummy.SendAndRecv(is, protocol.P_CL2LS_REQ_CHAR_CREATE, protocol.P_LS2CL_REP_CHAR_CREATE_SUCC,
 		charCreate, &charCreateResp)
 
 	// verify response

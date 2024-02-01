@@ -14,6 +14,46 @@ import (
 	"github.com/matryer/is"
 )
 
+type DummyPeer struct {
+	Recv chan *cnet.PacketEvent
+	Peer *cnet.Peer
+}
+
+// MakeDummyPeer creates a new dummy peer and returns it
+func MakeDummyPeer(ctx context.Context, is *is.I, port int) *DummyPeer {
+	conn, err := net.Dial("tcp", fmt.Sprintf("127.0.0.1:%d", port))
+	is.NoErr(err)
+
+	recv := make(chan *cnet.PacketEvent)
+	peer := cnet.NewPeer(ctx, conn)
+	go func() {
+		peer.Handler(recv)
+	}()
+
+	return &DummyPeer{Recv: recv, Peer: peer}
+}
+
+// SendAndRecv sends a packet (sID & out), waits for the expected response (rID) and decodes it into in
+func (dp *DummyPeer) SendAndRecv(is *is.I, sID, rID uint32, out, in interface{}) {
+	// send out packet
+	err := dp.Peer.Send(sID, out)
+	is.NoErr(err) // peer.Send() should not return an error
+
+	// receive response
+	evnt := <-dp.Recv
+	defer protocol.PutBuffer(evnt.Pkt)
+
+	is.Equal(evnt.PktID, rID)                         // should receive expected type
+	is.NoErr(protocol.NewPacket(evnt.Pkt).Decode(in)) // packet.Decode() should not return an error
+}
+
+// Kill closes the peer's connection
+func (dp *DummyPeer) Kill() {
+	dp.Peer.Kill()
+}
+
+// SetupEnvironment spawns a postgres container and returns a db and redis handler
+// along with a cleanup function
 func SetupEnvironment(ctx context.Context) (*db.DBHandler, *redis.RedisHandler, func()) {
 	// spawn postgres container
 	psql, err := sqltestutil.StartPostgresContainer(ctx, "15")
@@ -48,29 +88,4 @@ func SetupEnvironment(ctx context.Context) (*db.DBHandler, *redis.RedisHandler, 
 		rh.Close()
 		r.Close()
 	}
-}
-
-func MakeDummyPeer(ctx context.Context, is *is.I, port int, recv chan<- *cnet.PacketEvent) *cnet.Peer {
-	conn, err := net.Dial("tcp", fmt.Sprintf("127.0.0.1:%d", port))
-	is.NoErr(err)
-
-	peer := cnet.NewPeer(ctx, conn)
-	go func() {
-		peer.Handler(recv)
-	}()
-
-	return peer
-}
-
-func SendAndRecv(peer *cnet.Peer, recv chan *cnet.PacketEvent, is *is.I, sID, rID uint32, out, in interface{}) {
-	// send out packet
-	err := peer.Send(sID, out)
-	is.NoErr(err) // peer.Send() should not return an error
-
-	// receive response
-	evnt := <-recv
-	defer protocol.PutBuffer(evnt.Pkt)
-
-	is.Equal(evnt.PktID, rID)                         // should receive expected type
-	is.NoErr(protocol.NewPacket(evnt.Pkt).Decode(in)) // packet.Decode() should not return an error
 }
