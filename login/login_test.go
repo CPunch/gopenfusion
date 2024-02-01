@@ -3,8 +3,6 @@ package login_test
 import (
 	"context"
 	"encoding/binary"
-	"fmt"
-	"net"
 	"os"
 	"testing"
 
@@ -13,8 +11,7 @@ import (
 	"github.com/CPunch/gopenfusion/internal/db"
 	"github.com/CPunch/gopenfusion/internal/redis"
 	"github.com/CPunch/gopenfusion/login"
-	"github.com/alicebob/miniredis/v2"
-	"github.com/bitcomplete/sqltestutil"
+	"github.com/CPunch/gopenfusion/testutil"
 	"github.com/matryer/is"
 )
 
@@ -44,65 +41,16 @@ var (
 	}
 )
 
-func makeDummyPeer(ctx context.Context, is *is.I, recv chan<- *cnet.PacketEvent) *cnet.Peer {
-	conn, err := net.Dial("tcp", fmt.Sprintf("127.0.0.1:%d", loginPort))
-	is.NoErr(err)
-
-	peer := cnet.NewPeer(ctx, conn)
-	go func() {
-		peer.Handler(recv)
-	}()
-
-	return peer
-}
-
-func sendAndRecv(peer *cnet.Peer, recv chan *cnet.PacketEvent, is *is.I, sID, rID uint32, out, in interface{}) {
-	// send out packet
-	err := peer.Send(sID, out)
-	is.NoErr(err) // peer.Send() should not return an error
-
-	// receive response
-	evnt := <-recv
-	defer protocol.PutBuffer(evnt.Pkt)
-
-	is.Equal(evnt.PktID, rID)                         // should receive expected type
-	is.NoErr(protocol.NewPacket(evnt.Pkt).Decode(in)) // packet.Decode() should not return an error
-}
-
 func TestMain(m *testing.M) {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
-	// spawn postgres container
-	psql, err := sqltestutil.StartPostgresContainer(ctx, "15")
-	if err != nil {
-		panic(err)
-	}
+	// setup environment
+	var closer func()
+	testDB, rh, closer = testutil.SetupEnvironment(ctx)
+	defer closer()
 
-	// open db handler
-	testDB, err = db.OpenFromConnectionString("postgres", psql.ConnectionString()+"?sslmode=disable")
-	if err != nil {
-		panic(err)
-	}
-
-	if err = testDB.Setup(); err != nil {
-		panic(err)
-	}
-
-	// start miniredis
-	r, err := miniredis.Run()
-	if err != nil {
-		panic(err)
-	}
-	defer r.Close()
-
-	// open redis handler
-	rh, err = redis.OpenRedis(r.Addr())
-	if err != nil {
-		panic(err)
-	}
-	defer rh.Close()
-
+	var err error
 	loginPort, err = cnet.RandomPort()
 	if err != nil {
 		panic(err)
@@ -135,12 +83,12 @@ func TestLoginSuccSequence(t *testing.T) {
 	defer cancel()
 
 	recv := make(chan *cnet.PacketEvent)
-	peer := makeDummyPeer(ctx, is, recv)
+	peer := testutil.MakeDummyPeer(ctx, is, loginPort, recv)
 	defer peer.Kill()
 
 	// send login request (this should create an account)
 	var resp protocol.SP_LS2CL_REP_LOGIN_SUCC
-	sendAndRecv(peer, recv, is, protocol.P_CL2LS_REQ_LOGIN, protocol.P_LS2CL_REP_LOGIN_SUCC,
+	testutil.SendAndRecv(peer, recv, is, protocol.P_CL2LS_REQ_LOGIN, protocol.P_LS2CL_REP_LOGIN_SUCC,
 		protocol.SP_CL2LS_REQ_LOGIN{
 			SzID:       "testLoginSequence",
 			SzPassword: "test",
@@ -162,12 +110,12 @@ func TestLoginFailSequence(t *testing.T) {
 	defer cancel()
 
 	recv := make(chan *cnet.PacketEvent)
-	peer := makeDummyPeer(ctx, is, recv)
+	peer := testutil.MakeDummyPeer(ctx, is, loginPort, recv)
 	defer peer.Kill()
 
 	// send login request (this should not create an account)
 	var resp protocol.SP_LS2CL_REP_LOGIN_FAIL
-	sendAndRecv(peer, recv, is, protocol.P_CL2LS_REQ_LOGIN, protocol.P_LS2CL_REP_LOGIN_FAIL,
+	testutil.SendAndRecv(peer, recv, is, protocol.P_CL2LS_REQ_LOGIN, protocol.P_LS2CL_REP_LOGIN_FAIL,
 		protocol.SP_CL2LS_REQ_LOGIN{
 			SzID:       "",
 			SzPassword: "",
@@ -185,12 +133,12 @@ func TestCharacterSequence(t *testing.T) {
 	defer cancel()
 
 	recv := make(chan *cnet.PacketEvent)
-	peer := makeDummyPeer(ctx, is, recv)
+	peer := testutil.MakeDummyPeer(ctx, is, loginPort, recv)
 	defer peer.Kill()
 
 	// send login request (this should create an account)
 	var resp protocol.SP_LS2CL_REP_LOGIN_SUCC
-	sendAndRecv(peer, recv, is, protocol.P_CL2LS_REQ_LOGIN, protocol.P_LS2CL_REP_LOGIN_SUCC,
+	testutil.SendAndRecv(peer, recv, is, protocol.P_CL2LS_REQ_LOGIN, protocol.P_LS2CL_REP_LOGIN_SUCC,
 		protocol.SP_CL2LS_REQ_LOGIN{
 			SzID:       "testCharacterSequence",
 			SzPassword: "test",
@@ -214,7 +162,7 @@ func TestCharacterSequence(t *testing.T) {
 
 	// send character name check request
 	var charResp protocol.SP_LS2CL_REP_SAVE_CHAR_NAME_SUCC
-	sendAndRecv(peer, recv, is, protocol.P_CL2LS_REQ_SAVE_CHAR_NAME, protocol.P_LS2CL_REP_SAVE_CHAR_NAME_SUCC,
+	testutil.SendAndRecv(peer, recv, is, protocol.P_CL2LS_REQ_SAVE_CHAR_NAME, protocol.P_LS2CL_REP_SAVE_CHAR_NAME_SUCC,
 		protocol.SP_CL2LS_REQ_SAVE_CHAR_NAME{
 			ISlotNum:    1,
 			IGender:     1,
@@ -235,7 +183,7 @@ func TestCharacterSequence(t *testing.T) {
 	charCreate := testCharCreate
 	charCreate.PCStyle.IPC_UID = charResp.IPC_UID
 	var charCreateResp protocol.SP_LS2CL_REP_CHAR_CREATE_SUCC
-	sendAndRecv(peer, recv, is, protocol.P_CL2LS_REQ_CHAR_CREATE, protocol.P_LS2CL_REP_CHAR_CREATE_SUCC,
+	testutil.SendAndRecv(peer, recv, is, protocol.P_CL2LS_REQ_CHAR_CREATE, protocol.P_LS2CL_REP_CHAR_CREATE_SUCC,
 		charCreate, &charCreateResp)
 
 	// verify response
