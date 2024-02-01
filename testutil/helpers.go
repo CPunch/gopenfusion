@@ -64,22 +64,26 @@ func SetupEnvironment(ctx context.Context) (*db.DBHandler, *redis.RedisHandler, 
 	// open db handler
 	testDB, err := db.OpenFromConnectionString("postgres", psql.ConnectionString()+"?sslmode=disable")
 	if err != nil {
+		psql.Shutdown(ctx)
 		panic(err)
 	}
 
 	if err = testDB.Setup(); err != nil {
+		psql.Shutdown(ctx)
 		panic(err)
 	}
 
 	// start miniredis
 	r, err := miniredis.Run()
 	if err != nil {
+		psql.Shutdown(ctx)
 		panic(err)
 	}
 
 	// open redis handler
 	rh, err := redis.OpenRedis(r.Addr())
 	if err != nil {
+		psql.Shutdown(ctx)
 		panic(err)
 	}
 
