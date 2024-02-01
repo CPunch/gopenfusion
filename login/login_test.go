@@ -10,8 +10,8 @@ import (
 	"github.com/CPunch/gopenfusion/cnet/protocol"
 	"github.com/CPunch/gopenfusion/internal/db"
 	"github.com/CPunch/gopenfusion/internal/redis"
+	"github.com/CPunch/gopenfusion/internal/testutil"
 	"github.com/CPunch/gopenfusion/login"
-	"github.com/CPunch/gopenfusion/testutil"
 	"github.com/matryer/is"
 )
 
