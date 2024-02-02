@@ -12,7 +12,7 @@ import (
 
 	"github.com/CPunch/gopenfusion/cnet"
 	"github.com/CPunch/gopenfusion/cnet/protocol"
-	"github.com/CPunch/gopenfusion/util"
+	"github.com/CPunch/gopenfusion/internal/testutil"
 	"github.com/matryer/is"
 )
 
@@ -44,7 +44,7 @@ func TestService(t *testing.T) {
 	// shutdown service when test is done
 	defer func() {
 		cancel()
-		is.True(util.SelectWithTimeout(srvc.Stopped(), timeout)) // wait for service to stop with timeout
+		is.True(testutil.SelectWithTimeout(srvc.Stopped(), timeout)) // wait for service to stop with timeout
 	}()
 
 	// our dummy packet handler
@@ -67,8 +67,8 @@ func TestService(t *testing.T) {
 	}
 
 	// run service
-	go func() { is.NoErr(srvc.Start()) }()                   // srvc.Start error
-	is.True(util.SelectWithTimeout(srvc.Started(), timeout)) // wait for service to start with timeout
+	go func() { is.NoErr(srvc.Start()) }()                       // srvc.Start error
+	is.True(testutil.SelectWithTimeout(srvc.Started(), timeout)) // wait for service to start with timeout
 
 	wg.Add(maxDummyPeers * 2) // 2 wg.Done() per peer for receiving packets
 	for i := 0; i < maxDummyPeers; i++ {
@@ -93,5 +93,5 @@ func TestService(t *testing.T) {
 		}()
 	}
 
-	is.True(util.WaitWithTimeout(&wg, timeout)) // wait for all dummy peers to be done with timeout
+	is.True(testutil.WaitWithTimeout(&wg, timeout)) // wait for all dummy peers to be done with timeout
 }

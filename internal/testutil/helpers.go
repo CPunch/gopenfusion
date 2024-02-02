@@ -4,6 +4,8 @@ import (
 	"context"
 	"fmt"
 	"net"
+	"sync"
+	"time"
 
 	"github.com/CPunch/gopenfusion/cnet"
 	"github.com/CPunch/gopenfusion/cnet/protocol"
@@ -92,4 +94,23 @@ func SetupEnvironment(ctx context.Context) (*db.DBHandler, *redis.RedisHandler, 
 		rh.Close()
 		r.Close()
 	}
+}
+
+func SelectWithTimeout(ch <-chan struct{}, timeout time.Duration) bool {
+	select {
+	case <-ch:
+		return true
+	case <-time.After(timeout):
+		return false
+	}
+}
+
+func WaitWithTimeout(wg *sync.WaitGroup, timeout time.Duration) bool {
+	done := make(chan struct{})
+	go func() {
+		defer close(done)
+		wg.Wait()
+	}()
+
+	return SelectWithTimeout(done, timeout)
 }

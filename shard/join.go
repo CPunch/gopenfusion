@@ -8,7 +8,6 @@ import (
 	"github.com/CPunch/gopenfusion/cnet/protocol"
 	"github.com/CPunch/gopenfusion/internal/redis"
 	"github.com/CPunch/gopenfusion/shard/entity"
-	"github.com/CPunch/gopenfusion/util"
 )
 
 func (server *ShardServer) attachPlayer(peer *cnet.Peer, meta redis.LoginMetadata) (*entity.Player, error) {
@@ -51,7 +50,7 @@ func (server *ShardServer) RequestEnter(peer *cnet.Peer, pkt protocol.Packet) er
 	resp := &protocol.SP_FE2CL_REP_PC_ENTER_SUCC{
 		IID:           int32(plr.PlayerID),
 		PCLoadData2CL: plr.ToPCLoadData2CL(),
-		UiSvrTime:     util.GetTime(),
+		UiSvrTime:     protocol.GetTime(),
 	}
 
 	// setup peer

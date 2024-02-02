@@ -12,7 +12,6 @@ import (
 	"github.com/CPunch/gopenfusion/internal/config"
 	"github.com/CPunch/gopenfusion/internal/db"
 	"github.com/CPunch/gopenfusion/internal/redis"
-	"github.com/CPunch/gopenfusion/util"
 )
 
 const (
@@ -34,7 +33,7 @@ func (server *LoginServer) AcceptLogin(peer *cnet.Peer, SzID string, IClientVerC
 		ISlotNum:      ISlotNum,
 		IPaymentFlag:  1,
 		IOpenBetaFlag: 0,
-		UiSvrTime:     util.GetTime(),
+		UiSvrTime:     protocol.GetTime(),
 	}
 
 	if err := peer.Send(protocol.P_LS2CL_REP_LOGIN_SUCC, resp); err != nil {

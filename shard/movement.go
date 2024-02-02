@@ -6,7 +6,6 @@ import (
 	"github.com/CPunch/gopenfusion/cnet"
 	"github.com/CPunch/gopenfusion/cnet/protocol"
 	"github.com/CPunch/gopenfusion/shard/entity"
-	"github.com/CPunch/gopenfusion/util"
 )
 
 func (server *ShardServer) updatePlayerPosition(plr *entity.Player, X, Y, Z, Angle int) {
@@ -41,7 +40,7 @@ func (server *ShardServer) playerMove(peer *cnet.Peer, pkt protocol.Packet) erro
 		CKeyValue: move.CKeyValue,
 		ISpeed:    move.ISpeed,
 		IID:       int32(plr.PlayerID),
-		ISvrTime:  util.GetTime(),
+		ISvrTime:  protocol.GetTime(),
 	})
 }
 
@@ -63,7 +62,7 @@ func (server *ShardServer) playerStop(peer *cnet.Peer, pkt protocol.Packet) erro
 		IY:       stop.IY,
 		IZ:       stop.IZ,
 		IID:      int32(plr.PlayerID),
-		ISvrTime: util.GetTime(),
+		ISvrTime: protocol.GetTime(),
 	})
 }
 
@@ -91,6 +90,6 @@ func (server *ShardServer) playerJump(peer *cnet.Peer, pkt protocol.Packet) erro
 		CKeyValue: jump.CKeyValue,
 		ISpeed:    jump.ISpeed,
 		IID:       int32(plr.PlayerID),
-		ISvrTime:  util.GetTime(),
+		ISvrTime:  protocol.GetTime(),
 	})
 }
