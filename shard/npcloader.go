@@ -18,7 +18,8 @@ func (server *ShardServer) LoadNPCs() {
 
 	data, err := os.ReadFile(config.GetTDataPath() + "/NPCs.json")
 	if err != nil {
-		panic(err)
+		log.Printf("Warning: failed to load NPCs: %v", err)
+		return
 	}
 
 	// yes, we have to do it this way so our NPCs IDs will be incremented and unique
