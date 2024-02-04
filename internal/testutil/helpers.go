@@ -19,6 +19,7 @@ import (
 type DummyPeer struct {
 	Recv chan *cnet.PacketEvent
 	Peer *cnet.Peer
+	is   *is.I
 }
 
 // MakeDummyPeer creates a new dummy peer and returns it
@@ -32,21 +33,21 @@ func MakeDummyPeer(ctx context.Context, is *is.I, port int) *DummyPeer {
 		peer.Handler(recv)
 	}()
 
-	return &DummyPeer{Recv: recv, Peer: peer}
+	return &DummyPeer{Recv: recv, Peer: peer, is: is}
 }
 
 // SendAndRecv sends a packet (sID & out), waits for the expected response (rID) and decodes it into in
-func (dp *DummyPeer) SendAndRecv(is *is.I, sID, rID uint32, out, in interface{}) {
+func (dp *DummyPeer) SendAndRecv(sID, rID uint32, out, in interface{}) {
 	// send out packet
 	err := dp.Peer.Send(sID, out)
-	is.NoErr(err) // peer.Send() should not return an error
+	dp.is.NoErr(err) // peer.Send() should not return an error
 
 	// receive response
 	evnt := <-dp.Recv
 	defer protocol.PutBuffer(evnt.Pkt)
 
-	is.Equal(evnt.PktID, rID)                         // should receive expected type
-	is.NoErr(protocol.NewPacket(evnt.Pkt).Decode(in)) // packet.Decode() should not return an error
+	dp.is.Equal(evnt.PktID, rID)                         // should receive expected type
+	dp.is.NoErr(protocol.NewPacket(evnt.Pkt).Decode(in)) // packet.Decode() should not return an error
 }
 
 // Kill closes the peer's connection

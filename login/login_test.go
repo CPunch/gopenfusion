@@ -87,7 +87,7 @@ func TestLoginSuccSequence(t *testing.T) {
 
 	// send login request (this should create an account)
 	var resp protocol.SP_LS2CL_REP_LOGIN_SUCC
-	dummy.SendAndRecv(is, protocol.P_CL2LS_REQ_LOGIN, protocol.P_LS2CL_REP_LOGIN_SUCC,
+	dummy.SendAndRecv(protocol.P_CL2LS_REQ_LOGIN, protocol.P_LS2CL_REP_LOGIN_SUCC,
 		protocol.SP_CL2LS_REQ_LOGIN{
 			SzID:       "testLoginSequence",
 			SzPassword: "test",
@@ -113,7 +113,7 @@ func TestLoginFailSequence(t *testing.T) {
 
 	// send login request (this should not create an account)
 	var resp protocol.SP_LS2CL_REP_LOGIN_FAIL
-	dummy.SendAndRecv(is, protocol.P_CL2LS_REQ_LOGIN, protocol.P_LS2CL_REP_LOGIN_FAIL,
+	dummy.SendAndRecv(protocol.P_CL2LS_REQ_LOGIN, protocol.P_LS2CL_REP_LOGIN_FAIL,
 		protocol.SP_CL2LS_REQ_LOGIN{
 			SzID:       "",
 			SzPassword: "",
@@ -135,7 +135,7 @@ func TestCharacterSequence(t *testing.T) {
 
 	// send login request (this should create an account)
 	var resp protocol.SP_LS2CL_REP_LOGIN_SUCC
-	dummy.SendAndRecv(is, protocol.P_CL2LS_REQ_LOGIN, protocol.P_LS2CL_REP_LOGIN_SUCC,
+	dummy.SendAndRecv(protocol.P_CL2LS_REQ_LOGIN, protocol.P_LS2CL_REP_LOGIN_SUCC,
 		protocol.SP_CL2LS_REQ_LOGIN{
 			SzID:       "testCharacterSequence",
 			SzPassword: "test",
@@ -159,7 +159,7 @@ func TestCharacterSequence(t *testing.T) {
 
 	// send character name check request
 	var charResp protocol.SP_LS2CL_REP_SAVE_CHAR_NAME_SUCC
-	dummy.SendAndRecv(is, protocol.P_CL2LS_REQ_SAVE_CHAR_NAME, protocol.P_LS2CL_REP_SAVE_CHAR_NAME_SUCC,
+	dummy.SendAndRecv(protocol.P_CL2LS_REQ_SAVE_CHAR_NAME, protocol.P_LS2CL_REP_SAVE_CHAR_NAME_SUCC,
 		protocol.SP_CL2LS_REQ_SAVE_CHAR_NAME{
 			ISlotNum:    1,
 			IGender:     1,
@@ -180,7 +180,7 @@ func TestCharacterSequence(t *testing.T) {
 	charCreate := testCharCreate
 	charCreate.PCStyle.IPC_UID = charResp.IPC_UID
 	var charCreateResp protocol.SP_LS2CL_REP_CHAR_CREATE_SUCC
-	dummy.SendAndRecv(is, protocol.P_CL2LS_REQ_CHAR_CREATE, protocol.P_LS2CL_REP_CHAR_CREATE_SUCC,
+	dummy.SendAndRecv(protocol.P_CL2LS_REQ_CHAR_CREATE, protocol.P_LS2CL_REP_CHAR_CREATE_SUCC,
 		charCreate, &charCreateResp)
 
 	// verify response
