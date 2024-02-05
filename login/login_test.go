@@ -22,6 +22,11 @@ var (
 	rh        *redis.RedisHandler
 )
 
+/*
+test data was scraped by dumping packets, just adding a println to the LoginService
+to print the packet data
+*/
+
 var (
 	testCharCreate = protocol.SP_CL2LS_REQ_CHAR_CREATE{
 		PCStyle: protocol.SPCStyle{
@@ -42,6 +47,11 @@ var (
 )
 
 func TestMain(m *testing.M) {
+	ret := 1
+	defer func() {
+		os.Exit(ret)
+	}()
+
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
@@ -70,10 +80,9 @@ func TestMain(m *testing.M) {
 
 	// wait for login server to start, then start tests
 	<-loginSrv.Service().Started()
-	ret := m.Run()
+	ret = m.Run()
 	cancel()
 	<-loginSrv.Service().Stopped()
-	os.Exit(ret)
 }
 
 // This test tries a typical login sequence.

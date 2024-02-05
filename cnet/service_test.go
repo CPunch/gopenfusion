@@ -32,6 +32,7 @@ func TestMain(m *testing.M) {
 		panic(err)
 	}
 
+	// this is fine since we don't defer anything
 	os.Exit(m.Run())
 }
 

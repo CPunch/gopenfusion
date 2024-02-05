@@ -14,6 +14,11 @@ var (
 )
 
 func TestMain(m *testing.M) {
+	ret := 1
+	defer func() {
+		os.Exit(ret)
+	}()
+
 	r, err := miniredis.Run()
 	if err != nil {
 		panic(err)
@@ -26,7 +31,7 @@ func TestMain(m *testing.M) {
 	}
 	defer rh.Close()
 
-	os.Exit(m.Run())
+	ret = m.Run()
 }
 
 func TestRedisLogin(t *testing.T) {

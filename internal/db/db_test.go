@@ -18,6 +18,11 @@ var (
 )
 
 func TestMain(m *testing.M) {
+	ret := 1
+	defer func() {
+		os.Exit(ret)
+	}()
+
 	ctx := context.Background()
 	psql, err := sqltestutil.StartPostgresContainer(ctx, "15")
 	if err != nil {
@@ -35,7 +40,7 @@ func TestMain(m *testing.M) {
 		panic(err)
 	}
 
-	os.Exit(m.Run())
+	ret = m.Run()
 }
 
 func TestDBAccount(t *testing.T) {
