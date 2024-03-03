@@ -27,25 +27,6 @@ test data was scraped by dumping packets, just adding a println to the LoginServ
 to print the packet data
 */
 
-var (
-	testCharCreate = protocol.SP_CL2LS_REQ_CHAR_CREATE{
-		PCStyle: protocol.SPCStyle{
-			INameCheck: 1, SzFirstName: "Hector",
-			SzLastName: "Bannonvenom", IGender: 1, IFaceStyle: 1,
-			IHairStyle: 17, IHairColor: 11, ISkinColor: 10, IEyeColor: 2,
-			IHeight: 1, IBody: 0, IClass: 0,
-		},
-		SOn_Item: protocol.SOnItem{
-			IEquipHandID: 0, IEquipUBID: 53, IEquipLBID: 17, IEquipFootID: 58,
-			IEquipHeadID: 0, IEquipFaceID: 0, IEquipBackID: 0,
-		},
-		SOn_Item_Index: protocol.SOnItem_Index{
-			IEquipUBID_index: 15, IEquipLBID_index: 12, IEquipFootID_index: 17,
-			IFaceStyle: 2, IHairStyle: 18,
-		},
-	}
-)
-
 func TestMain(m *testing.M) {
 	ret := 1
 	defer func() {
@@ -175,18 +156,18 @@ func TestCharacterSequence(t *testing.T) {
 			IFNCode:     260,
 			ILNCode:     551,
 			IMNCode:     33,
-			SzFirstName: testCharCreate.PCStyle.SzFirstName,
-			SzLastName:  testCharCreate.PCStyle.SzLastName,
+			SzFirstName: testutil.TestCharCreate.PCStyle.SzFirstName,
+			SzLastName:  testutil.TestCharCreate.PCStyle.SzLastName,
 		}, &charResp)
 
 	// verify response
-	is.Equal(charResp.ISlotNum, int8(1))                               // should have the same slot number
-	is.Equal(charResp.IGender, int8(1))                                // should have the same gender
-	is.Equal(charResp.SzFirstName, testCharCreate.PCStyle.SzFirstName) // should have the same first name
-	is.Equal(charResp.SzLastName, testCharCreate.PCStyle.SzLastName)   // should have the same last name
+	is.Equal(charResp.ISlotNum, int8(1))                                        // should have the same slot number
+	is.Equal(charResp.IGender, int8(1))                                         // should have the same gender
+	is.Equal(charResp.SzFirstName, testutil.TestCharCreate.PCStyle.SzFirstName) // should have the same first name
+	is.Equal(charResp.SzLastName, testutil.TestCharCreate.PCStyle.SzLastName)   // should have the same last name
 
 	// send character create request
-	charCreate := testCharCreate
+	charCreate := testutil.TestCharCreate
 	charCreate.PCStyle.IPC_UID = charResp.IPC_UID
 	var charCreateResp protocol.SP_LS2CL_REP_CHAR_CREATE_SUCC
 	dummy.SendAndRecv(protocol.P_CL2LS_REQ_CHAR_CREATE, protocol.P_LS2CL_REP_CHAR_CREATE_SUCC,
